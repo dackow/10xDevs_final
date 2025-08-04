@@ -1,0 +1,18 @@
+{% extends "base.html" %}
+
+{% block content %}
+<h1>{{ set.title }}</h1>
+
+<a href="/dashboard" class="btn btn-secondary">Back to Dashboard</a>
+
+<h2>Flashcards</h2>
+<ul>
+    {% for flashcard in set.flashcards %}
+    <li>
+        <strong>Question:</strong> {{ flashcard.question }}<br>
+        <strong>Answer:</strong> {{ flashcard.answer }}
+        <a href="/flashcards/{{ flashcard.id }}/edit" class="btn btn-sm btn-primary">Edit</a>
+    </li>
+    {% endfor %}
+</ul>
+{% endblock %}
