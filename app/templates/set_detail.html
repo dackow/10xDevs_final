@@ -1,18 +1,27 @@
 {% extends "base.html" %}
 
 {% block content %}
-<h1>{{ set.title }}</h1>
+<div class="container mt-4">
+    <a href="/dashboard" class="btn btn-secondary mb-3">Wróć do panelu</a>
 
-<a href="/dashboard" class="btn btn-secondary">Back to Dashboard</a>
+    <h1 class="mb-4">{{ set.name }}</h1>
 
-<h2>Flashcards</h2>
-<ul>
-    {% for flashcard in set.flashcards %}
-    <li>
-        <strong>Question:</strong> {{ flashcard.question }}<br>
-        <strong>Answer:</strong> {{ flashcard.answer }}
-        <a href="/flashcards/{{ flashcard.id }}/edit" class="btn btn-sm btn-primary">Edit</a>
-    </li>
-    {% endfor %}
-</ul>
+    {% if set.flashcards %}
+    <ul class="list-group">
+        {% for card in set.flashcards %}
+        <li class="list-group-item d-flex justify-content-between align-items-center">
+            <div>
+                <strong>Pytanie:</strong> {{ card.question }}<br>
+                <strong>Odpowiedź:</strong> {{ card.answer }}
+            </div>
+            <a href="/cards/{{ card.id }}/edit" class="btn btn-secondary btn-sm">Edytuj</a>
+        </li>
+        {% endfor %}
+    </ul>
+    {% else %}
+    <div class="alert alert-info" role="alert">
+        Ten zestaw nie zawiera żadnych fiszek.
+    </div>
+    {% endif %}
+</div>
 {% endblock %}
