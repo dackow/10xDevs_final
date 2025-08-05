@@ -1,11 +1,9 @@
 from datetime import datetime, UTC
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, joinedload
 from app import models
-from app.schemas.schemas import UserCreate, FlashcardSetCreate
+from app.schemas.schemas import UserCreate, FlashcardSetCreate, FlashcardUpdate
 from fastapi import HTTPException, status
 
-def get_user(db: Session, user_id: int):
-    return db.query(models.User).filter(models.User.id == user_id).first()
 
 def get_user_by_username(db: Session, username: str):
     return db.query(models.User).filter(models.User.username == username).first()
@@ -23,8 +21,6 @@ def create_user(db: Session, user: UserCreate):
     db.refresh(db_user)
     return db_user
 
-def get_flashcard_sets(db: Session, user_id: int, skip: int = 0, limit: int = 100):
-    return db.query(models.FlashcardSet).filter(models.FlashcardSet.user_id == user_id).offset(skip).limit(limit).all()
 
 def create_flashcard_set(db: Session, set_data: FlashcardSetCreate, user_id: int):
     # Sprawdzenie unikalności nazwy zestawu dla danego użytkownika
@@ -56,11 +52,6 @@ def create_flashcard_set(db: Session, set_data: FlashcardSetCreate, user_id: int
     db.refresh(db_flashcard_set)
     return db_flashcard_set
 
-from sqlalchemy.orm import Session, joinedload
-from app import models
-from app.schemas.schemas import UserCreate, FlashcardSetCreate
-from fastapi import HTTPException, status
-from app.services import auth_service
 
 def get_flashcard_set(db: Session, set_id: int, user_id: int):
     return db.query(models.FlashcardSet).options(joinedload(models.FlashcardSet.flashcards)).filter(
@@ -68,11 +59,35 @@ def get_flashcard_set(db: Session, set_id: int, user_id: int):
         models.FlashcardSet.user_id == user_id
     ).first()
 
+
+def get_flashcard_sets(db: Session, user_id: int):
+    return db.query(models.FlashcardSet).filter(models.FlashcardSet.user_id == user_id).all()
+
+
+def get_flashcard_for_editing(db: Session, card_id: int, user_id: int):
+    """
+    Retrieves a flashcard for editing, verifying ownership.
+
+    Args:
+        db: The database session.
+        card_id: The ID of the flashcard.
+        user_id: The ID of the user.
+
+    Returns:
+        The flashcard if it exists and belongs to the user, otherwise None.
+    """
+    return (
+        db.query(models.Flashcard)
+        .join(models.FlashcardSet)
+        .filter(models.Flashcard.id == card_id, models.FlashcardSet.user_id == user_id)
+        .first()
+    )
+
 def update_flashcard(db: Session, card_id: int, user_id: int, flashcard_data: dict):
     """
     Aktualizuje fiszkę na podstawie jej ID, weryfikując, czy użytkownik jest właścicielem.
     """
-    # Pobierz fiszkę z joinem do zestawu
+    # Pobierz fiszkę z joinem do zestawu, weryfikując jednocześnie własność
     db_flashcard = db.query(models.Flashcard).join(models.FlashcardSet).filter(
         models.Flashcard.id == card_id,
         models.FlashcardSet.user_id == user_id
@@ -80,10 +95,6 @@ def update_flashcard(db: Session, card_id: int, user_id: int, flashcard_data: di
 
     if not db_flashcard:
         return None
-
-    # Sprawdzenie uprawnień
-    if db_flashcard.set.user_id != user_id:
-        return None # Lub rzucić wyjątek autoryzacji
 
     # Aktualizacja danych
     for key, value in flashcard_data.items():

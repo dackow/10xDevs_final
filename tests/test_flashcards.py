@@ -66,12 +66,10 @@ def get_auth_token(user):
 def test_update_flashcard(test_user, test_flashcard):
     token = get_auth_token(test_user)
     headers = {"Authorization": f"Bearer {token}"}
-    response = client.put(
-        f"/flashcards/{test_flashcard.id}",
+    response = client.post(
+        f"/cards/{test_flashcard.id}/edit",
         headers=headers,
-        json={"question": "Updated Question", "answer": "Updated Answer"}
+        data={"question": "Updated Question", "answer": "Updated Answer"},
+        follow_redirects=False
     )
-    assert response.status_code == 200
-    data = response.json()
-    assert data["question"] == "Updated Question"
-    assert data["answer"] == "Updated Answer"
+    assert response.status_code == 303

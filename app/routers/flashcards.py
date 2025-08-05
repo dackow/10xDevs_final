@@ -1,155 +1,152 @@
-from fastapi import APIRouter, Depends, HTTPException, status, Query
+from fastapi import APIRouter, Depends, HTTPException, status, Query, Request, Form
+from fastapi.responses import HTMLResponse, RedirectResponse
+from fastapi.templating import Jinja2Templates
 from sqlalchemy.orm import Session
 from app import models
-from app.crud.crud import update_flashcard, create_flashcard_set, delete_flashcard_set, get_flashcard_set, get_flashcard_sets
+from app.crud.crud import update_flashcard, create_flashcard_set, delete_flashcard_set, get_flashcard_set, get_flashcard_sets, get_flashcard_for_editing
 from app.schemas.schemas import Flashcard, FlashcardUpdate, FlashcardSetCreate, FlashcardSetDetail, FlashcardSet
 from app.dependencies import get_db, get_current_user
+import logging
 
 router = APIRouter()
+templates = Jinja2Templates(directory="app/templates")
 
-@router.put("/flashcards/{card_id}", response_model=Flashcard)
-def update_flashcard_endpoint(card_id: int, flashcard_data: FlashcardUpdate, db: Session = Depends(get_db), current_user: models.User = Depends(get_current_user)):
-    """
-    Aktualizuje istniejącą fiszkę.
-
-    Args:
-        card_id (int): ID fiszki do zaktualizowania.
-        flashcard_data (FlashcardUpdate): Nowe dane dla fiszki (pytanie i odpowiedź).
-        db (Session): Sesja bazy danych.
-        current_user (models.User): Aktualnie zalogowany użytkownik.
-
-    Returns:
-        Flashcard: Zaktualizowana fiszka.
-
-    Raises:
-        HTTPException: Jeśli fiszka nie zostanie znaleziona lub użytkownik nie ma uprawnień.
-    """
-    db_flashcard = update_flashcard(db=db, card_id=card_id, user_id=current_user.id, flashcard_data=flashcard_data.model_dump())
-    if db_flashcard is None:
-        raise HTTPException(status_code=404, detail="Flashcard not found or you don't have permission to edit it")
-    return db_flashcard
-
-from app.schemas.schemas import AIGenerationRequest, AIGenerationResponse
-from app.services.ollama import generate_flashcards_from_text
-
-@router.post("/ai/generate-flashcards", response_model=AIGenerationResponse)
-async def generate_flashcards_endpoint(
-    request: AIGenerationRequest,
+@router.get("/sets/{set_id}", response_class=HTMLResponse)
+async def set_detail_view(
+    set_id: int,
+    request: Request,
+    db: Session = Depends(get_db),
     current_user: models.User = Depends(get_current_user)
 ):
-    """
-    Generuje fiszki za pomocą modelu AI (Ollama) na podstawie dostarczonego tekstu źródłowego.
-    """
-    try:
-        flashcards = await generate_flashcards_from_text(request.text, request.count)
-        return AIGenerationResponse(flashcards=flashcards)
-    except HTTPException as e:
-        raise e
-    except Exception as e:
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"An unexpected error occurred during flashcard generation: {e}"
+    db_set = get_flashcard_set(db=db, set_id=set_id, user_id=current_user.id)
+    if db_set is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Flashcard set not found")
+    return templates.TemplateResponse("set_detail.html", {"request": request, "user": current_user, "set": db_set})
+
+@router.get("/cards/{card_id}/edit", response_class=HTMLResponse)
+async def edit_flashcard_view(
+    card_id: int,
+    request: Request,
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(get_current_user)
+):
+    flashcard = get_flashcard_for_editing(db, card_id, current_user.id)
+    if flashcard is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Flashcard not found or you don't have permission to edit it")
+    return templates.TemplateResponse("edit_flashcard.html", {"request": request, "user": current_user, "flashcard": flashcard})
+
+@router.post("/cards/{card_id}/edit", response_class=HTMLResponse)
+async def edit_flashcard_post(
+    card_id: int,
+    request: Request,
+    question: str = Form(...),
+    answer: str = Form(...),
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(get_current_user)
+):
+    flashcard = get_flashcard_for_editing(db, card_id, current_user.id)
+    if not flashcard:
+        # This case should ideally not be reached if UI checks are in place,
+        # but as a fallback, redirect to the dashboard.
+        return RedirectResponse(url="/dashboard", status_code=status.HTTP_303_SEE_OTHER)
+
+    if not question or not answer:
+        # Re-render the edit form with an error message
+        return templates.TemplateResponse(
+            "edit_flashcard.html",
+            {
+                "request": request,
+                "user": current_user,
+                "flashcard": flashcard,
+                "error_message": "Pytanie i odpowiedź nie mogą być puste."
+            },
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY
         )
 
-@router.post("/sets", response_model=FlashcardSetDetail, status_code=status.HTTP_201_CREATED)
-def create_flashcard_set_endpoint(
-    set_data: FlashcardSetCreate,
-    db: Session = Depends(get_db),
-    current_user: models.User = Depends(get_current_user)
-):
-    """
-    Tworzy nowy zestaw fiszek dla uwierzytelnionego użytkownika.
-
-    Args:
-        set_data (FlashcardSetCreate): Dane do utworzenia zestawu fiszek, w tym nazwa i lista fiszek.
-        db (Session): Sesja bazy danych.
-        current_user (models.User): Aktualnie zalogowany użytkownik.
-
-    Returns:
-        FlashcardSetDetail: Utworzony zestaw fiszek wraz z przypisanymi fiszkami.
-
-    Raises:
-        HTTPException: Jeśli zestaw o tej samej nazwie już istnieje dla danego użytkownika (400 Bad Request),
-                       lub jeśli dane wejściowe są nieprawidłowe (422 Unprocessable Entity).
-    """
     try:
-        db_flashcard_set = create_flashcard_set(db=db, set_data=set_data, user_id=current_user.id)
-        return db_flashcard_set
-    except ValueError as e:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
+        flashcard_data = FlashcardUpdate(question=question, answer=answer)
+        updated_flashcard = update_flashcard(db, card_id, current_user.id, flashcard_data.model_dump())
+        
+        # After the update attempt, always redirect to the set detail page.
+        # The original flashcard object (before update) has the set_id.
+        return RedirectResponse(url=f"/sets/{flashcard.set_id}", status_code=status.HTTP_303_SEE_OTHER)
 
-@router.get("/sets/{set_id}", response_model=FlashcardSetDetail)
-def get_flashcard_set_endpoint(set_id: int, db: Session = Depends(get_db), current_user: models.User = Depends(get_current_user)):
-    """
-    Pobiera szczegółowe informacje o pojedynczym zestawie fiszek.
+    except HTTPException as e:
+        # Handle potential database or other errors by re-rendering the form with an error.
+        return templates.TemplateResponse(
+            "edit_flashcard.html",
+            {
+                "request": request,
+                "user": current_user,
+                "flashcard": flashcard,
+                "error_message": e.detail
+            },
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR
+        )
 
-    Args:
-        set_id (int): ID zestawu fiszek do pobrania.
-        db (Session): Sesja bazy danych.
-        current_user (models.User): Aktualnie zalogowany użytkownik.
+@router.get("/generate", response_class=HTMLResponse)
+async def handle_generate_view_get(
+    request: Request,
+    current_user: models.User = Depends(get_current_user)
+):
+    return templates.TemplateResponse("generate.html", {"request": request, "user": current_user})
 
-    Returns:
-        FlashcardSetDetail: Szczegółowe informacje o zestawie fiszek.
-
-    Raises:
-        HTTPException: Jeśli zestaw nie zostanie znaleziony (404 Not Found).
-    """
-    db_flashcard_set = get_flashcard_set(db=db, set_id=set_id, user_id=current_user.id)
-    if db_flashcard_set is None:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Flashcard set not found")
-    return db_flashcard_set
-
-from fastapi import APIRouter, Depends, HTTPException, status, Query
-from sqlalchemy.orm import Session
-from app import models
-from app.crud.crud import update_flashcard, create_flashcard_set, delete_flashcard_set, get_flashcard_set, get_flashcard_sets
-from app.schemas.schemas import Flashcard, FlashcardUpdate, FlashcardSetCreate, FlashcardSetDetail, FlashcardSet
-from app.dependencies import get_db, get_current_user
-
-
-@router.get("/sets", response_model=list[FlashcardSet])
-def get_flashcard_sets_endpoint(
-    skip: int = Query(0, ge=0),
-    limit: int = Query(100, ge=0, le=100),
+@router.post("/generate", response_class=HTMLResponse)
+async def handle_generate_view_post(
+    request: Request,
     db: Session = Depends(get_db),
     current_user: models.User = Depends(get_current_user)
 ):
-    """
-    Pobiera listę wszystkich zestawów fiszek należących do uwierzytelnionego użytkownika.
-    Obsługuje paginację.
+    form_data = await request.form()
+    action = form_data.get("action")
 
-    Args:
-        skip (int): Liczba rekordów do pominięcia (dla paginacji).
-        limit (int): Maksymalna liczba rekordów do zwrócenia.
-        db (Session): Sesja bazy danych.
-        current_user (models.User): Aktualnie zalogowany użytkownik.
+    if action == "generate":
+        text = form_data.get("text")
+        count = int(form_data.get("count", 5))
 
-    Returns:
-        List[FlashcardSet]: Lista zestawów fiszek.
-    """
-    flashcard_sets = get_flashcard_sets(db=db, user_id=current_user.id, skip=skip, limit=limit)
-    return flashcard_sets
+        if not text:
+            return templates.TemplateResponse("generate.html", {"request": request, "user": current_user, "error_message": "Tekst źródłowy nie może być pusty."})
 
-@router.put("/sets/{set_id}")
-def update_flashcard_set(set_id: int):
-    # Logic for updating a flashcard set
-    pass
+        try:
+            generated_flashcards = await generate_flashcards_from_text(text, count)
+            return templates.TemplateResponse("generate.html", {"request": request, "user": current_user, "generated_flashcards": generated_flashcards})
+        except HTTPException as e:
+            return templates.TemplateResponse("generate.html", {"request": request, "user": current_user, "error_message": e.detail})
+        except Exception as e:
+            return templates.TemplateResponse("generate.html", {"request": request, "user": current_user, "error_message": f"Wystąpił nieoczekiwany błąd podczas generowania fiszek: {e}"})
 
-@router.delete("/sets/{set_id}")
-def delete_flashcard_set_endpoint(set_id: int, db: Session = Depends(get_db), current_user: models.User = Depends(get_current_user)):
-    """
-    Usuwa zestaw fiszek na podstawie jego ID.
+    elif action == "save":
+        set_name = form_data.get("name")
+        questions = form_data.getlist("questions")
+        answers = form_data.getlist("answers")
 
-    Args:
-        set_id (int): ID zestawu fiszek do usunięcia.
-        db (Session): Sesja bazy danych.
-        current_user (models.User): Aktualnie zalogowany użytkownik.
+        if not set_name:
+            generated_flashcards = []
+            for q, a in zip(questions, answers):
+                generated_flashcards.append({"question": q, "answer": a})
 
-    Returns:
-        dict: Komunikat o sukcesie.
+            return templates.TemplateResponse("generate.html", {"request": request, "user": current_user, "generated_flashcards": generated_flashcards, "error_message": "Nazwa zestawu nie może być pusta."})
 
-    Raises:
-        HTTPException: Jeśli zestaw nie zostanie znaleziony (404 Not Found),
-                       lub użytkownik nie ma uprawnień do usunięcia (403 Forbidden).
-    """
-    return delete_flashcard_set(db=db, set_id=set_id, user_id=current_user.id)
+        flashcards_to_create = []
+        for q, a in zip(questions, answers):
+            flashcards_to_create.append(Flashcard(question=q, answer=a))
+        
+        try:
+            set_data = FlashcardSetCreate(name=set_name, flashcards=flashcards_to_create)
+            create_flashcard_set(db=db, set_data=set_data, user_id=current_user.id)
+            return RedirectResponse(url="/dashboard", status_code=status.HTTP_303_SEE_OTHER)
+        except ValueError as e:
+            generated_flashcards = []
+            for q, a in zip(questions, answers):
+                generated_flashcards.append({"question": q, "answer": a})
+
+            return templates.TemplateResponse("generate.html", {"request": request, "user": current_user, "generated_flashcards": generated_flashcards, "error_message": str(e)})
+
+        except HTTPException as e:
+            generated_flashcards = []
+            for q, a in zip(questions, answers):
+                generated_flashcards.append({"question": q, "answer": a})
+
+            return templates.TemplateResponse("generate.html", {"request": request, "user": current_user, "generated_flashcards": generated_flashcards, "error_message": e.detail})
+
+    return templates.TemplateResponse("generate.html", {"request": request, "user": current_user, "error_message": "Nieznana akcja."})
