@@ -1,4 +1,4 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 from datetime import datetime
 from typing import List, Optional
 
@@ -26,8 +26,7 @@ class Flashcard(FlashcardBase):
     created_at: datetime
     updated_at: datetime
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 # =============================================================================
 # 2. SCHEMATY DLA ZESTAWOW FISZEK (FLASHCARD SETS)
@@ -48,8 +47,7 @@ class FlashcardSet(FlashcardSetBase):
     created_at: datetime
     updated_at: datetime
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 class FlashcardSetDetail(FlashcardSet):
     """Schemat reprezentujacy pelny, szczegolowy widok zestawu z fiszkami (DTO)."""
@@ -73,8 +71,7 @@ class User(UserBase):
     created_at: datetime
     updated_at: datetime
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 # =============================================================================
 # 4. SCHEMATY DLA MECHANIZMOW POMOCNICZYCH (AUTH, AI)

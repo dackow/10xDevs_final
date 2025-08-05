@@ -47,8 +47,7 @@ def test_flashcard_set(test_user):
     db.add(flashcard_set)
     db.commit()
     db.refresh(flashcard_set)
-    db.close()
-    return flashcard_set
+    yield flashcard_set
 
 @pytest.fixture(scope="function")
 def test_flashcard(test_flashcard_set):
@@ -57,16 +56,15 @@ def test_flashcard(test_flashcard_set):
     db.add(flashcard)
     db.commit()
     db.refresh(flashcard)
-    db.close()
-    return flashcard
+    print(f"DEBUG: test_flashcard - Flashcard ID: {flashcard.id}, Set ID: {flashcard.set_id}")
+    yield flashcard
 
-def get_auth_token(username, password):
-    client.post("/users", json={"username": username, "password": password})
-    response = client.post("/token", data={"username": username, "password": password})
+def get_auth_token(user):
+    response = client.post("/token", data={"username": user.username, "password": "testpassword"})
     return response.json()["access_token"]
 
 def test_update_flashcard(test_user, test_flashcard):
-    token = get_auth_token("testuser", "testpassword")
+    token = get_auth_token(test_user)
     headers = {"Authorization": f"Bearer {token}"}
     response = client.put(
         f"/flashcards/{test_flashcard.id}",
