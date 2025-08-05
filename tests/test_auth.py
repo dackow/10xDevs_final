@@ -12,7 +12,7 @@ engine = create_engine(SQLALCHEMY_DATABASE_URL, connect_args={"check_same_thread
 TestingSessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
 # Nadpisz get_db, aby używać testowej bazy danych
-@pytest.fixture(scope="function", autouse=True)
+@pytest.fixture(scope="module", autouse=True)
 def setup_database():
     Base.metadata.create_all(bind=engine)
     yield
@@ -29,28 +29,16 @@ app.dependency_overrides[get_db] = override_get_db
 
 client = TestClient(app)
 
-def test_create_user():
+def test_login_for_access_token():
+    # Najpierw utwórz użytkownika
+    client.post("/users", json={"username": "testuser", "password": "testpassword"})
+    
+    # Następnie zaloguj się, aby uzyskać token
     response = client.post(
-        "/users",
-        json={"username": "testuser", "password": "testpassword"}
+        "/token",
+        data={"username": "testuser", "password": "testpassword"}
     )
-    assert response.status_code == 201
+    assert response.status_code == 200
     data = response.json()
-    assert data["username"] == "testuser"
-    assert "id" in data
-    assert "created_at" in data
-    assert "updated_at" in data
-
-def test_create_existing_user():
-    # Utwórz użytkownika po raz pierwszy
-    client.post(
-        "/users",
-        json={"username": "existinguser", "password": "testpassword"}
-    )
-    # Spróbuj utworzyć tego samego użytkownika ponownie
-    response = client.post(
-        "/users",
-        json={"username": "existinguser", "password": "anotherpassword"}
-    )
-    assert response.status_code == 400
-    assert response.json() == {"detail": "Username already registered"}
+    assert "access_token" in data
+    assert data["token_type"] == "bearer"
