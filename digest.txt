@@ -1,0 +1,2803 @@
+Directory structure:
+└── 10xDevs_final/
+    ├── README.md
+    ├── alembic.ini
+    ├── history.txt
+    ├── main.py
+    ├── pyproject.toml
+    ├── requirements.txt
+    ├── .python-version
+    ├── app/
+    │   ├── __init__.py
+    │   ├── dependencies.py
+    │   ├── main.py
+    │   ├── crud/
+    │   │   └── crud.py
+    │   ├── models/
+    │   │   ├── __init__.py
+    │   │   └── models.py
+    │   ├── routers/
+    │   │   ├── __init__.py
+    │   │   ├── auth.py
+    │   │   └── flashcards.py
+    │   ├── schemas/
+    │   │   └── schemas.py
+    │   ├── services/
+    │   │   ├── auth_service.py
+    │   │   └── ollama.py
+    │   └── templates/
+    │       ├── base.html
+    │       ├── dashboard.html
+    │       ├── edit_flashcard.html
+    │       ├── login.html
+    │       ├── register.html
+    │       └── set_detail.html
+    ├── migrations/
+    │   ├── README
+    │   ├── env.py
+    │   ├── script.py.mako
+    │   └── versions/
+    │       ├── 530c3932bfaa_create_initial_tables.py
+    │       └── 6a01f0f00fa4_rename_password_hash.py
+    ├── tests/
+    │   └── test_users.py
+    └── .ai/
+        ├── api-plan.md
+        ├── db-plan.md
+        ├── db_podsumowanie.md
+        ├── delete-flashcard-sets-by-id-implementation-plan.md
+        ├── get-flashcard-sets-by-id-implementation-plan.md
+        ├── get-flashcard-sets-implementation-plan.md
+        ├── opis_do_prd.md
+        ├── opis_projektu.txt
+        ├── podsumowania_do_prd.md
+        ├── post-ai-generate-flashcards-implementation-plan.md
+        ├── post-flashcard-sets-implementation-plan.md
+        ├── post-token-implementation-plan.md
+        ├── post-users-implementation-plan.md
+        ├── prd.md
+        ├── put-flashcards-by-id-implementation-plan.md
+        ├── stack_weryfikacja.md
+        └── tech-stack.md
+
+================================================
+FILE: README.md
+================================================
+# AI Flashcard Generator
+
+A web application that allows users to automatically generate educational flashcards from their notes using AI.
+
+## Table of Contents
+
+- [Project Description](#project-description)
+- [Tech Stack](#tech-stack)
+- [Getting Started Locally](#getting-started-locally)
+- [Available Scripts](#available-scripts)
+- [Project Scope](#project-scope)
+- [Project Status](#project-status)
+- [License](#license)
+
+## Project Description
+
+This project is a Minimum Viable Product (MVP) of a web application designed to solve the time-consuming problem of creating educational flashcards. The application is aimed at elementary school students, enabling them to automatically generate flashcards from materials like class notes. Users can manage their flashcard sets, edit them, and prepare for learning, streamlining the study process.
+
+## Tech Stack
+
+The technology stack was chosen with a focus on simplicity, speed of MVP implementation, and clearly defined boundaries.
+
+| Component | Technology | Justification |
+| :--- | :--- | :--- |
+| **Backend Framework** | FastAPI | Speed, data validation, auto-generated API documentation. |
+| **Database** | SQLite | Simplicity, no configuration needed, perfect for an MVP. |
+| **ORM** | SQLAlchemy | Industry standard, safe interaction with the database. |
+| **HTTP Client (for Ollama)**| HTTPX | Support for asynchronous operations in FastAPI. |
+| **HTML Template Engine** | Jinja2 | Simple server-side HTML generation. |
+| **CSS Framework** | Bootstrap | Rapid development of a clean and aesthetic user interface. |
+| **Application Server** | Uvicorn | The standard server for FastAPI. |
+
+## Getting Started Locally
+
+To set up and run the project on your local machine, follow these steps.
+
+### Prerequisites
+
+- Python 3.8+
+- `pip` package manager
+
+### Installation & Setup
+
+1.  **Clone the repository:**
+    ```sh
+    git clone https://github.com/your-username/ai-flashcard-generator.git
+    cd ai-flashcard-generator
+    ```
+
+2.  **Create and activate a virtual environment:**
+    - On macOS and Linux:
+      ```sh
+      python3 -m venv .venv
+      source .venv/bin/activate
+      ```
+    - On Windows:
+      ```sh
+      python -m venv .venv
+      .\.venv\Scripts\activate
+      ```
+
+3.  **Install the dependencies:**
+    ```sh
+    pip install -r requirements.txt
+    ```
+
+4.  **Run the application:**
+    ```sh
+    uvicorn app.main:app --reload
+    ```
+    The application will be available at `http://127.0.0.1:8000`.
+
+## Available Scripts
+
+-   `uvicorn app.main:app --reload`: Runs the application in development mode with live reloading.
+
+## Project Scope
+
+### Included Features (MVP)
+
+-   **User Authentication:** Users can create an account and log in.
+-   **AI Flashcard Generation:** Provides a text area to paste source content and generates flashcards using an Ollama-based language model.
+-   **CRUD for Flashcard Sets:** Users can save, view, edit, and delete their flashcard sets.
+
+### Excluded Features (Out of Scope for MVP)
+
+-   AI generation based on a topic alone (without source text).
+-   Implementation of a spaced repetition algorithm (e.g., SM-2).
+-   Manual creation of flashcards from scratch.
+-   Importing files in formats other than plain text (e.g., PDF, DOCX).
+-   Social features like sharing sets between users.
+-   Advanced JavaScript-based frontend.
+
+## Project Status
+
+This project is currently in the **MVP (Minimum Viable Product)** development stage. The primary goal is to deliver a working application that fulfills all the core functional requirements defined in the project scope.
+
+## License
+
+This project is licensed under the MIT License. See the `LICENSE` file for more details.
+
+
+
+================================================
+FILE: alembic.ini
+================================================
+# A generic, single database configuration.
+
+[alembic]
+# path to migration scripts.
+# this is typically a path given in POSIX (e.g. forward slashes)
+# format, relative to the token %(here)s which refers to the location of this
+# ini file
+script_location = %(here)s/migrations
+
+# template used to generate migration file names; The default value is %%(rev)s_%%(slug)s
+# Uncomment the line below if you want the files to be prepended with date and time
+# see https://alembic.sqlalchemy.org/en/latest/tutorial.html#editing-the-ini-file
+# for all available tokens
+# file_template = %%(year)d_%%(month).2d_%%(day).2d_%%(hour).2d%%(minute).2d-%%(rev)s_%%(slug)s
+
+# sys.path path, will be prepended to sys.path if present.
+# defaults to the current working directory.  for multiple paths, the path separator
+# is defined by "path_separator" below.
+prepend_sys_path = .
+
+
+# timezone to use when rendering the date within the migration file
+# as well as the filename.
+# If specified, requires the python>=3.9 or backports.zoneinfo library and tzdata library.
+# Any required deps can installed by adding `alembic[tz]` to the pip requirements
+# string value is passed to ZoneInfo()
+# leave blank for localtime
+# timezone =
+
+# max length of characters to apply to the "slug" field
+# truncate_slug_length = 40
+
+# set to 'true' to run the environment during
+# the 'revision' command, regardless of autogenerate
+# revision_environment = false
+
+# set to 'true' to allow .pyc and .pyo files without
+# a source .py file to be detected as revisions in the
+# versions/ directory
+# sourceless = false
+
+# version location specification; This defaults
+# to <script_location>/versions.  When using multiple version
+# directories, initial revisions must be specified with --version-path.
+# The path separator used here should be the separator specified by "path_separator"
+# below.
+# version_locations = %(here)s/bar:%(here)s/bat:%(here)s/alembic/versions
+
+# path_separator; This indicates what character is used to split lists of file
+# paths, including version_locations and prepend_sys_path within configparser
+# files such as alembic.ini.
+# The default rendered in new alembic.ini files is "os", which uses os.pathsep
+# to provide os-dependent path splitting.
+#
+# Note that in order to support legacy alembic.ini files, this default does NOT
+# take place if path_separator is not present in alembic.ini.  If this
+# option is omitted entirely, fallback logic is as follows:
+#
+# 1. Parsing of the version_locations option falls back to using the legacy
+#    "version_path_separator" key, which if absent then falls back to the legacy
+#    behavior of splitting on spaces and/or commas.
+# 2. Parsing of the prepend_sys_path option falls back to the legacy
+#    behavior of splitting on spaces, commas, or colons.
+#
+# Valid values for path_separator are:
+#
+# path_separator = :
+# path_separator = ;
+# path_separator = space
+# path_separator = newline
+#
+# Use os.pathsep. Default configuration used for new projects.
+path_separator = os
+
+# set to 'true' to search source files recursively
+# in each "version_locations" directory
+# new in Alembic version 1.10
+# recursive_version_locations = false
+
+# the output encoding used when revision files
+# are written from script.py.mako
+# output_encoding = utf-8
+
+# database URL.  This is consumed by the user-maintained env.py script only.
+# other means of configuring database URLs may be customized within the env.py
+# file.
+sqlalchemy.url = sqlite:///flashcards.db
+
+
+[post_write_hooks]
+# post_write_hooks defines scripts or Python functions that are run
+# on newly generated revision scripts.  See the documentation for further
+# detail and examples
+
+# format using "black" - use the console_scripts runner, against the "black" entrypoint
+# hooks = black
+# black.type = console_scripts
+# black.entrypoint = black
+# black.options = -l 79 REVISION_SCRIPT_FILENAME
+
+# lint with attempts to fix using "ruff" - use the module runner, against the "ruff" module
+# hooks = ruff
+# ruff.type = module
+# ruff.module = ruff
+# ruff.options = check --fix REVISION_SCRIPT_FILENAME
+
+# Alternatively, use the exec runner to execute a binary found on your PATH
+# hooks = ruff
+# ruff.type = exec
+# ruff.executable = ruff
+# ruff.options = check --fix REVISION_SCRIPT_FILENAME
+
+# Logging configuration.  This is also consumed by the user-maintained
+# env.py script only.
+[loggers]
+keys = root,sqlalchemy,alembic
+
+[handlers]
+keys = console
+
+[formatters]
+keys = generic
+
+[logger_root]
+level = WARNING
+handlers = console
+qualname =
+
+[logger_sqlalchemy]
+level = WARNING
+handlers =
+qualname = sqlalchemy.engine
+
+[logger_alembic]
+level = INFO
+handlers =
+qualname = alembic
+
+[handler_console]
+class = StreamHandler
+args = (sys.stderr,)
+level = NOTSET
+formatter = generic
+
+[formatter_generic]
+format = %(levelname)-5.5s [%(name)s] %(message)s
+datefmt = %H:%M:%S
+
+
+
+================================================
+FILE: history.txt
+================================================
+### 5.1. ZarzÄ…dzanie kontem
+- ID: US-001
+- TytuĹ‚: Rejestracja nowego uĹĽytkownika
+- Opis: Jako nowy uĹĽytkownik, chcÄ™ mĂłc zaĹ‚oĹĽyÄ‡ konto za pomocÄ… unikalnej nazwy uĹĽytkownika i hasĹ‚a, aby uzyskaÄ‡ dostÄ™p do aplikacji i zapisywaÄ‡ swoje postÄ™py.
+- Kryteria akceptacji:
+  - 1. Formularz rejestracji zawiera pola na nazwÄ™ uĹĽytkownika i hasĹ‚a.
+  - 2. Po pomyĹ›lnym przesĹ‚aniu formularza, nowe konto uĹĽytkownika jest tworzone w bazie danych.
+  - 3. UĹĽytkownik jest informowany o sukcesie i przekierowywany na stronÄ™ logowania.
+  - 4. JeĹ›li nazwa uĹĽytkownika juĹĽ istnieje, wyĹ›wietlany jest odpowiedni komunikat o bĹ‚Ä™dzie.
+
+- ID: US-002
+- TytuĹ‚: Logowanie do aplikacji
+- Opis: Jako zarejestrowany uĹĽytkownik, chcÄ™ mĂłc zalogowaÄ‡ siÄ™ na moje konto, aby uzyskaÄ‡ dostÄ™p do moich zestawĂłw fiszek.
+- Kryteria akceptacji:
+  - 1. Formularz logowania zawiera pola na nazwÄ™ uĹĽytkownika i hasĹ‚o.
+  - 2. Po pomyĹ›lnym zalogowaniu, uĹĽytkownik jest przekierowywany do gĹ‚Ăłwnego panelu aplikacji.
+  - 3. W przypadku podania bĹ‚Ä™dnych danych, wyĹ›wietlany jest odpowiedni komunikat o bĹ‚Ä™dzie.
+
+- ID: US-003
+- TytuĹ‚: Wylogowanie z aplikacji
+- Opis: Jako zalogowany uĹĽytkownik, chcÄ™ mĂłc siÄ™ wylogowaÄ‡, aby bezpiecznie zakoĹ„czyÄ‡ sesjÄ™.
+- Kryteria akceptacji:
+  - 1. W interfejsie aplikacji widoczny jest przycisk "Wyloguj".
+  - 2. Po klikniÄ™ciu przycisku, sesja uĹĽytkownika jest koĹ„czona.
+  - 3. UĹĽytkownik jest przekierowywany na stronÄ™ logowania.
+
+### 5.2. Tworzenie i zarzÄ…dzanie fiszkami
+- ID: US-004
+- TytuĹ‚: Generowanie fiszek z notatek
+- Opis: Jako zalogowany uĹĽytkownik, chcÄ™ wkleiÄ‡ tekst moich notatek z lekcji do formularza, wybraÄ‡ liczbÄ™ fiszek do wygenerowania i zainicjowaÄ‡ proces, aby szybko stworzyÄ‡ materiaĹ‚y do nauki.
+- Kryteria akceptacji:
+  - 1. Na stronie gĹ‚Ăłwnej znajduje siÄ™ pole tekstowe oraz opcje wyboru iloĹ›ci fiszek ("maĹ‚o", "Ĺ›rednio", "duĹĽo").
+  - 2. Po klikniÄ™ciu przycisku "Generuj", aplikacja wysyĹ‚a zapytanie do API modelu AI z treĹ›ciÄ… notatek.
+  - 3. Po otrzymaniu odpowiedzi, wygenerowane pary pytanie-odpowiedĹş sÄ… wyĹ›wietlane na ekranie w czytelnej liĹ›cie.
+  - 4. JeĹ›li pole tekstowe jest puste, po klikniÄ™ciu "Generuj" wyĹ›wietlany jest komunikat o bĹ‚Ä™dzie.
+
+- ID: US-005
+- TytuĹ‚: Zapisywanie nowego zestawu fiszek
+- Opis: Jako uĹĽytkownik, po wygenerowaniu fiszek, chcÄ™ mĂłc zapisaÄ‡ je jako nowy zestaw, nadajÄ…c mu nazwÄ™, aby mĂłc do niego wrĂłciÄ‡ w przyszĹ‚oĹ›ci.
+- Kryteria akceptacji:
+  - 1. Po wygenerowaniu fiszek widoczny jest przycisk "Zapisz zestaw" oraz pole na jego nazwÄ™.
+  - 2. Po klikniÄ™ciu przycisku "Zapisz zestaw" z poprawnie wypeĹ‚nionÄ… nazwÄ…, nowy zestaw jest zapisywany w bazie danych i powiÄ…zany z kontem uĹĽytkownika.
+  - 3. UĹĽytkownik jest przekierowywany do listy swoich zestawĂłw, gdzie widoczny jest nowo dodany element.
+  - 4. JeĹ›li uĹĽytkownik sprĂłbuje zapisaÄ‡ zestaw z pustÄ… nazwÄ…, operacja jest blokowana i wyĹ›wietlany jest odpowiedni komunikat o bĹ‚Ä™dzie (np. "Nazwa zestawu nie moĹĽe byÄ‡ pusta").
+
+- ID: US-006
+- TytuĹ‚: PrzeglÄ…danie listy zapisanych zestawĂłw
+- Opis: Jako zalogowany uĹĽytkownik, chcÄ™ widzieÄ‡ listÄ™ wszystkich moich zapisanych zestawĂłw fiszek, aby mĂłc wybraÄ‡ jeden z nich do przeglÄ…dania lub edycji.
+- Kryteria akceptacji:
+  - 1. W gĹ‚Ăłwnym panelu aplikacji wyĹ›wietlana jest lista nazw wszystkich zestawĂłw naleĹĽÄ…cych do uĹĽytkownika.
+  - 2. KaĹĽda nazwa na liĹ›cie jest linkiem prowadzÄ…cym do widoku szczegĂłĹ‚owego danego zestawu.
+
+- ID: US-007
+- TytuĹ‚: PrzeglÄ…danie zawartoĹ›ci zestawu
+- Opis: Jako uĹĽytkownik, chcÄ™ mĂłc kliknÄ…Ä‡ na wybrany zestaw z mojej listy, aby zobaczyÄ‡ wszystkie fiszki, ktĂłre siÄ™ w nim znajdujÄ….
+- Kryteria akceptacji:
+  - 1. Po klikniÄ™ciu na nazwÄ™ zestawu, wyĹ›wietlana jest strona ze wszystkimi parami pytanie-odpowiedĹş z tego zestawu.
+  - 2. Przy kaĹĽdej fiszce widoczna jest opcja "Edytuj".
+
+- ID: US-008
+- TytuĹ‚: Edycja pojedynczej fiszki
+- Opis: Jako uĹĽytkownik, chcÄ™ mĂłc edytowaÄ‡ treĹ›Ä‡ pytania i odpowiedzi w istniejÄ…cej fiszce, aby poprawiÄ‡ bĹ‚Ä™dy lub doprecyzowaÄ‡ informacje.
+- Kryteria akceptacji:
+  - 1. Po klikniÄ™ciu przycisku "Edytuj" przy fiszce, uĹĽytkownik jest przenoszony do formularza edycji.
+  - 2. Formularz jest wypeĹ‚niony aktualnÄ… treĹ›ciÄ… pytania i odpowiedzi.
+  - 3. Po zapisaniu zmian, dane fiszki w bazie danych sÄ… aktualizowane.
+  - 4. UĹĽytkownik jest przekierowywany z powrotem do widoku zestawu, gdzie widzi zaktualizowanÄ… treĹ›Ä‡.
+
+- ID: US-009
+- TytuĹ‚: Usuwanie caĹ‚ego zestawu fiszek
+- Opis: Jako uĹĽytkownik, chcÄ™ mĂłc usunÄ…Ä‡ caĹ‚y zestaw fiszek, gdy nie jest mi juĹĽ potrzebny.
+- Kryteria akceptacji:
+  - 1. Na liĹ›cie zestawĂłw, przy kaĹĽdej nazwie znajduje siÄ™ przycisk "UsuĹ„".
+  - 2. Po klikniÄ™ciu przycisku, wyĹ›wietlane jest potwierdzenie operacji.
+  - 3. Po potwierdzeniu, caĹ‚y zestaw wraz ze wszystkimi powiÄ…zanymi fiszkami jest usuwany z bazy danych.
+
+
+================================================
+FILE: main.py
+================================================
+def main():
+    print("Hello from 10xdevs-final!")
+
+
+if __name__ == "__main__":
+    main()
+
+
+
+================================================
+FILE: pyproject.toml
+================================================
+[project]
+name = "10xdevs-final"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.13"
+dependencies = []
+
+
+
+================================================
+FILE: requirements.txt
+================================================
+annotated-types==0.7.0
+anyio==4.9.0
+asttokens==3.0.0
+certifi==2025.4.26
+cffi==1.17.1
+click==8.2.1
+colorama==0.4.6
+comm==0.2.2
+cryptography==45.0.3
+debugpy==1.8.11
+decorator==5.1.1
+executing==2.1.0
+fastapi==0.116.1
+greenlet==3.2.3
+h11==0.16.0
+httpcore==1.0.9
+httpx==0.28.1
+httpx-sse==0.4.0
+idna==3.10
+ipykernel==6.29.5
+ipython==8.30.0
+jedi==0.19.2
+Jinja2==3.1.6
+jupyter_client==8.6.3
+jupyter_core==5.7.2
+markdown-it-py==3.0.0
+MarkupSafe==3.0.2
+matplotlib-inline==0.1.7
+mcp==1.9.3
+mdurl==0.1.2
+nest-asyncio==1.6.0
+numpy==2.2.6
+oracledb==3.1.1
+oracledb-mcp-server==0.1.1
+packaging==24.2
+pandas==2.3.0
+parso==0.8.4
+platformdirs==4.3.6
+prompt_toolkit==3.0.48
+psutil==6.1.0
+pure_eval==0.2.3
+pycparser==2.22
+pydantic==2.11.5
+pydantic-settings==2.9.1
+pydantic_core==2.33.2
+Pygments==2.18.0
+python-dateutil==2.9.0.post0
+python-dotenv==1.1.0
+python-multipart==0.0.20
+pytz==2025.2
+pywin32==308
+pyzmq==26.2.0
+rich==14.0.0
+shellingham==1.5.4
+six==1.17.0
+sniffio==1.3.1
+SQLAlchemy==2.0.41
+sse-starlette==2.3.6
+stack-data==0.6.3
+starlette==0.47.0
+tornado==6.4.2
+traitlets==5.14.3
+typer==0.16.0
+typing-inspection==0.4.1
+typing_extensions==4.14.0
+typing_extensions==4.14.0
+tzdata==2025.2
+uv==0.7.11
+uvicorn==0.34.3
+wcwidth==0.2.13
+passlib[bcrypt]
+
+
+================================================
+FILE: .python-version
+================================================
+3.13
+
+
+
+================================================
+FILE: app/__init__.py
+================================================
+[Empty file]
+
+
+================================================
+FILE: app/dependencies.py
+================================================
+from sqlalchemy import create_engine
+from sqlalchemy.orm import sessionmaker
+
+SQLALCHEMY_DATABASE_URL = "sqlite:///./flashcards.db"
+
+engine = create_engine(
+    SQLALCHEMY_DATABASE_URL, connect_args={"check_same_thread": False}
+)
+SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+
+def get_db():
+    db = SessionLocal()
+    try:
+        yield db
+    finally:
+        db.close()
+
+
+
+================================================
+FILE: app/main.py
+================================================
+import sys
+print("sys.path before imports:", sys.path)
+from fastapi import FastAPI
+from app.routers import auth, flashcards
+
+app = FastAPI()
+
+app.include_router(auth.router)
+app.include_router(flashcards.router)
+
+@app.get("/")
+def read_root():
+    return {"message": "Welcome to the Flashcard Generator API"}
+
+
+
+================================================
+FILE: app/crud/crud.py
+================================================
+from sqlalchemy.orm import Session
+from app import models
+from app.schemas.schemas import UserCreate, FlashcardSetCreate
+
+def get_user(db: Session, user_id: int):
+    return db.query(models.User).filter(models.User.id == user_id).first()
+
+def get_user_by_username(db: Session, username: str):
+    return db.query(models.User).filter(models.User.username == username).first()
+
+from app.services import auth_service
+
+def create_user(db: Session, user: UserCreate):
+    hashed_password = auth_service.get_password_hash(user.password)
+    db_user = models.User(username=user.username, password_hash=hashed_password)
+    db.add(db_user)
+    db.commit()
+    db.refresh(db_user)
+    return db_user
+
+def get_flashcard_sets(db: Session, skip: int = 0, limit: int = 100):
+    return db.query(models.FlashcardSet).offset(skip).limit(limit).all()
+
+def create_flashcard_set(db: Session, flashcard_set: FlashcardSetCreate, user_id: int):
+    db_flashcard_set = models.FlashcardSet(**flashcard_set.dict(), owner_id=user_id)
+    db.add(db_flashcard_set)
+    db.commit()
+    db.refresh(db_flashcard_set)
+    return db_flashcard_set
+
+
+
+================================================
+FILE: app/models/__init__.py
+================================================
+from .models import User, FlashcardSet, Flashcard
+
+
+================================================
+FILE: app/models/models.py
+================================================
+from sqlalchemy import create_engine, Column, Integer, String, DateTime, ForeignKey, UniqueConstraint
+from sqlalchemy.ext.declarative import declarative_base
+from sqlalchemy.orm import relationship
+from datetime import datetime
+
+Base = declarative_base()
+
+class User(Base):
+    __tablename__ = "users"
+
+    id = Column(Integer, primary_key=True, index=True)
+    username = Column(String, unique=True, index=True, nullable=False)
+    password_hash = Column(String, nullable=False)
+    created_at = Column(DateTime, default=datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+    flashcard_sets = relationship("FlashcardSet", back_populates="owner", cascade="all, delete-orphan")
+
+class FlashcardSet(Base):
+    __tablename__ = "flashcard_sets"
+
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    name = Column(String, nullable=False)
+    created_at = Column(DateTime, default=datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+    owner = relationship("User", back_populates="flashcard_sets")
+    flashcards = relationship("Flashcard", back_populates="set", cascade="all, delete-orphan")
+
+    __table_args__ = (UniqueConstraint('user_id', 'name', name='_user_set_name_uc'),)
+
+
+class Flashcard(Base):
+    __tablename__ = "flashcards"
+
+    id = Column(Integer, primary_key=True, index=True)
+    set_id = Column(Integer, ForeignKey("flashcard_sets.id"), nullable=False)
+    question = Column(String, nullable=False)
+    answer = Column(String, nullable=False)
+    created_at = Column(DateTime, default=datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+    set = relationship("FlashcardSet", back_populates="flashcards")
+
+
+================================================
+FILE: app/routers/__init__.py
+================================================
+[Empty file]
+
+
+================================================
+FILE: app/routers/auth.py
+================================================
+from fastapi import APIRouter, Depends, HTTPException, status
+from sqlalchemy.orm import Session
+from sqlalchemy.exc import IntegrityError
+
+from app.crud import crud
+#from app.schemas import User, UserCreate # Direct import
+from app.schemas.schemas import User, UserCreate
+from ..dependencies import get_db
+
+router = APIRouter()
+
+@router.post("/users", response_model=User, status_code=status.HTTP_201_CREATED)
+def create_user(user: UserCreate, db: Session = Depends(get_db)):
+    db_user = crud.get_user_by_username(db, username=user.username)
+    if db_user:
+        raise HTTPException(status_code=400, detail="Username already registered")
+    try:
+        return crud.create_user(db=db, user=user)
+    except IntegrityError:
+        raise HTTPException(status_code=400, detail="Username already registered")
+
+@router.post("/register")
+def register_user():
+    # Logic for user registration
+    pass
+
+@router.post("/login")
+def login_user():
+    # Logic for user login
+    pass
+
+@router.post("/logout")
+def logout_user():
+    # Logic for user logout
+    pass
+
+
+================================================
+FILE: app/routers/flashcards.py
+================================================
+from fastapi import APIRouter
+
+router = APIRouter()
+
+@router.post("/generate")
+def generate_flashcards():
+    # Logic for generating flashcards
+    pass
+
+@router.post("/sets")
+def save_flashcard_set():
+    # Logic for saving a flashcard set
+    pass
+
+@router.get("/sets")
+def get_flashcard_sets():
+    # Logic for getting all flashcard sets
+    pass
+
+@router.put("/sets/{set_id}")
+def update_flashcard_set(set_id: int):
+    # Logic for updating a flashcard set
+    pass
+
+@router.delete("/sets/{set_id}")
+def delete_flashcard_set(set_id: int):
+    # Logic for deleting a flashcard set
+    pass
+
+
+
+================================================
+FILE: app/schemas/schemas.py
+================================================
+from pydantic import BaseModel
+from datetime import datetime
+from typing import List, Optional
+
+# =============================================================================
+# 1. SCHEMATY DLA FISZEK (FLASHCARDS)
+# =============================================================================
+
+class FlashcardBase(BaseModel):
+    """Podstawowy schemat dla fiszki, zawiera wspolne pola."""
+    question: str
+    answer: str
+
+class FlashcardCreate(FlashcardBase):
+    """Schemat uzywany do tworzenia nowej fiszki (np. przez AI)."""
+    pass
+
+class FlashcardUpdate(FlashcardBase):
+    """Schemat uzywany do aktualizacji istniejacej fiszki."""
+    pass
+
+class Flashcard(FlashcardBase):
+    """Pelny schemat fiszki, uzywany w odpowiedziach API (DTO)."""
+    id: int
+    set_id: int
+    created_at: datetime
+    updated_at: datetime
+
+    class Config:
+        from_attributes = True
+
+# =============================================================================
+# 2. SCHEMATY DLA ZESTAWOW FISZEK (FLASHCARD SETS)
+# =============================================================================
+
+class FlashcardSetBase(BaseModel):
+    """Podstawowy schemat dla zestawu fiszek."""
+    name: str
+
+class FlashcardSetCreate(FlashcardSetBase):
+    """Schemat uzywany do tworzenia nowego zestawu wraz z fiszkami (Command Model)."""
+    flashcards: List[FlashcardCreate]
+
+class FlashcardSet(FlashcardSetBase):
+    """Schemat reprezentujacy zestaw na liscie (widok podsumowania)."""
+    id: int
+    user_id: int
+    created_at: datetime
+    updated_at: datetime
+
+    class Config:
+        from_attributes = True
+
+class FlashcardSetDetail(FlashcardSet):
+    """Schemat reprezentujacy pelny, szczegolowy widok zestawu z fiszkami (DTO)."""
+    flashcards: List[Flashcard] = []
+
+# =============================================================================
+# 3. SCHEMATY DLA UZYTKOWNIKOW (USERS)
+# =============================================================================
+
+class UserBase(BaseModel):
+    """Podstawowy schemat uzytkownika."""
+    username: str
+
+class UserCreate(UserBase):
+    """Schemat uzywany do tworzenia nowego uzytkownika (Command Model)."""
+    password: str
+
+class User(UserBase):
+    """Schemat uzytkownika zwracany przez API (DTO), bez hasla."""
+    id: int
+    created_at: datetime
+    updated_at: datetime
+
+    class Config:
+        from_attributes = True
+
+# =============================================================================
+# 4. SCHEMATY DLA MECHANIZMOW POMOCNICZYCH (AUTH, AI)
+# =============================================================================
+
+class Token(BaseModel):
+    """Schemat dla tokena uwierzytelniajacego JWT."""
+    access_token: str
+    token_type: str
+
+class TokenData(BaseModel):
+    """Schemat dla danych zakodowanych w tokenie."""
+    username: Optional[str] = None
+
+class AIGenerationRequest(BaseModel):
+    """Schemat dla zadania wygenerowania fiszek przez AI (Command Model)."""
+    text: str
+    count: int
+
+class AIGenerationResponse(BaseModel):
+    """Schemat dla odpowiedzi z wygenerowanymi fiszkami (DTO)."""
+    flashcards: List[FlashcardCreate]
+
+
+
+================================================
+FILE: app/services/auth_service.py
+================================================
+from passlib.context import CryptContext
+
+pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+
+def get_password_hash(password: str) -> str:
+    return pwd_context.hash(password)
+
+def verify_password(plain_password: str, hashed_password: str) -> bool:
+    return pwd_context.verify(plain_password, hashed_password)
+
+
+
+================================================
+FILE: app/services/ollama.py
+================================================
+import httpx
+
+async def generate_flashcards_from_text(text: str, num_flashcards: int):
+    # This is a placeholder for the actual implementation
+    # In a real application, you would make a request to the Ollama API
+    # and parse the response to create flashcards.
+    
+    # For now, we'll just return some dummy data.
+    flashcards = []
+    for i in range(num_flashcards):
+        flashcards.append({
+            "question": f"Question {i+1}",
+            "answer": f"Answer {i+1}"
+        })
+    return flashcards
+
+
+
+================================================
+FILE: app/templates/base.html
+================================================
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Flashcard App</title>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+</head>
+<body>
+    <div class="container">
+        {% block content %}{% endblock %}
+    </div>
+</body>
+</html>
+
+
+
+================================================
+FILE: app/templates/dashboard.html
+================================================
+{% extends "base.html" %}
+
+{% block content %}
+<h1>Dashboard</h1>
+<p>Welcome, {{ user.username }}!</p>
+<a href="/logout" class="btn btn-danger">Logout</a>
+
+<h2>Your Flashcard Sets</h2>
+<ul>
+    {% for set in sets %}
+    <li><a href="/sets/{{ set.id }}">{{ set.title }}</a></li>
+    {% endfor %}
+</ul>
+
+<h2>Generate New Flashcards</h2>
+<form method="post" action="/generate">
+    <div class="form-group">
+        <label for="text">Paste your text here:</label>
+        <textarea class="form-control" id="text" name="text" rows="10"></textarea>
+    </div>
+    <div class="form-group">
+        <label for="num_flashcards">Number of flashcards:</label>
+        <select class="form-control" id="num_flashcards" name="num_flashcards">
+            <option value="5">Small (5)</option>
+            <option value="10">Medium (10)</option>
+            <option value="15">Large (15)</option>
+        </select>
+    </div>
+    <button type="submit" class="btn btn-primary">Generate</button>
+</form>
+{% endblock %}
+
+
+
+================================================
+FILE: app/templates/edit_flashcard.html
+================================================
+{% extends "base.html" %}
+
+{% block content %}
+<h1>Edit Flashcard</h1>
+<form method="post">
+    <div class="form-group">
+        <label for="question">Question</label>
+        <input type="text" class="form-control" id="question" name="question" value="{{ flashcard.question }}">
+    </div>
+    <div class="form-group">
+        <label for="answer">Answer</label>
+        <textarea class="form-control" id="answer" name="answer" rows="3">{{ flashcard.answer }}</textarea>
+    </div>
+    <button type="submit" class="btn btn-primary">Save Changes</button>
+</form>
+{% endblock %}
+
+
+
+================================================
+FILE: app/templates/login.html
+================================================
+{% extends "base.html" %}
+
+{% block content %}
+<h1>Login</h1>
+<form method="post">
+    <div class="form-group">
+        <label for="username">Username</label>
+        <input type="text" class="form-control" id="username" name="username">
+    </div>
+    <div class="form-group">
+        <label for="password">Password</label>
+        <input type="password" class="form-control" id="password" name="password">
+    </div>
+    <button type="submit" class="btn btn-primary">Login</button>
+</form>
+<p>Don't have an account? <a href="/register">Register here</a>.</p>
+{% endblock %}
+
+
+
+================================================
+FILE: app/templates/register.html
+================================================
+{% extends "base.html" %}
+
+{% block content %}
+<h1>Register</h1>
+<form method="post">
+    <div class="form-group">
+        <label for="username">Username</label>
+        <input type="text" class="form-control" id="username" name="username">
+    </div>
+    <div class="form-group">
+        <label for="password">Password</label>
+        <input type="password" class="form-control" id="password" name="password">
+    </div>
+    <button type="submit" class="btn btn-primary">Register</button>
+</form>
+<p>Already have an account? <a href="/login">Login here</a>.</p>
+{% endblock %}
+
+
+
+================================================
+FILE: app/templates/set_detail.html
+================================================
+{% extends "base.html" %}
+
+{% block content %}
+<h1>{{ set.title }}</h1>
+
+<a href="/dashboard" class="btn btn-secondary">Back to Dashboard</a>
+
+<h2>Flashcards</h2>
+<ul>
+    {% for flashcard in set.flashcards %}
+    <li>
+        <strong>Question:</strong> {{ flashcard.question }}<br>
+        <strong>Answer:</strong> {{ flashcard.answer }}
+        <a href="/flashcards/{{ flashcard.id }}/edit" class="btn btn-sm btn-primary">Edit</a>
+    </li>
+    {% endfor %}
+</ul>
+{% endblock %}
+
+
+
+================================================
+FILE: migrations/README
+================================================
+Generic single-database configuration.
+
+
+================================================
+FILE: migrations/env.py
+================================================
+from logging.config import fileConfig
+
+from sqlalchemy import engine_from_config
+from sqlalchemy import pool
+
+from alembic import context
+
+# this is the Alembic Config object, which provides
+# access to the values within the .ini file in use.
+config = context.config
+
+# Interpret the config file for Python logging.
+# This line sets up loggers basically.
+if config.config_file_name is not None:
+    fileConfig(config.config_file_name)
+
+# add your model's MetaData object here
+# for 'autogenerate' support
+# from myapp import mymodel
+# target_metadata = mymodel.Base.metadata
+from app.models.models import Base
+target_metadata = Base.metadata
+
+# other values from the config, defined by the needs of env.py,
+# can be acquired:
+# my_important_option = config.get_main_option("my_important_option")
+# ... etc.
+
+
+def run_migrations_offline() -> None:
+    """Run migrations in 'offline' mode.
+
+    This configures the context with just a URL
+    and not an Engine, though an Engine is acceptable
+    here as well.  By skipping the Engine creation
+    we don't even need a DBAPI to be available.
+
+    Calls to context.execute() here emit the given string to the
+    script output.
+
+    """
+    url = config.get_main_option("sqlalchemy.url")
+    context.configure(
+        url=url,
+        target_metadata=target_metadata,
+        literal_binds=True,
+        dialect_opts={"paramstyle": "named"},
+    )
+
+    with context.begin_transaction():
+        context.run_migrations()
+
+
+def run_migrations_online() -> None:
+    """Run migrations in 'online' mode.
+
+    In this scenario we need to create an Engine
+    and associate a connection with the context.
+
+    """
+    connectable = engine_from_config(
+        config.get_section(config.config_ini_section, {}),
+        prefix="sqlalchemy.",
+        poolclass=pool.NullPool,
+    )
+
+    with connectable.connect() as connection:
+        context.configure(
+            connection=connection, target_metadata=target_metadata
+        )
+
+        with context.begin_transaction():
+            context.run_migrations()
+
+
+if context.is_offline_mode():
+    run_migrations_offline()
+else:
+    run_migrations_online()
+
+
+
+================================================
+FILE: migrations/script.py.mako
+================================================
+"""${message}
+
+Revision ID: ${up_revision}
+Revises: ${down_revision | comma,n}
+Create Date: ${create_date}
+
+"""
+from typing import Sequence, Union
+
+from alembic import op
+import sqlalchemy as sa
+${imports if imports else ""}
+
+# revision identifiers, used by Alembic.
+revision: str = ${repr(up_revision)}
+down_revision: Union[str, Sequence[str], None] = ${repr(down_revision)}
+branch_labels: Union[str, Sequence[str], None] = ${repr(branch_labels)}
+depends_on: Union[str, Sequence[str], None] = ${repr(depends_on)}
+
+
+def upgrade() -> None:
+    """Upgrade schema."""
+    ${upgrades if upgrades else "pass"}
+
+
+def downgrade() -> None:
+    """Downgrade schema."""
+    ${downgrades if downgrades else "pass"}
+
+
+
+================================================
+FILE: migrations/versions/530c3932bfaa_create_initial_tables.py
+================================================
+""""Create_initial_tables"
+
+Revision ID: 530c3932bfaa
+Revises: 
+Create Date: 2025-08-04 11:30:38.887122
+
+"""
+from typing import Sequence, Union
+
+from alembic import op
+import sqlalchemy as sa
+
+
+# revision identifiers, used by Alembic.
+revision: str = '530c3932bfaa'
+down_revision: Union[str, Sequence[str], None] = None
+branch_labels: Union[str, Sequence[str], None] = None
+depends_on: Union[str, Sequence[str], None] = None
+
+
+def upgrade() -> None:
+    """Upgrade schema."""
+    # ### commands auto generated by Alembic - please adjust! ###
+    op.create_table('users',
+    sa.Column('id', sa.Integer(), nullable=False),
+    sa.Column('username', sa.String(), nullable=True),
+    sa.Column('hashed_password', sa.String(), nullable=True),
+    sa.PrimaryKeyConstraint('id')
+    )
+    op.create_index(op.f('ix_users_id'), 'users', ['id'], unique=False)
+    op.create_index(op.f('ix_users_username'), 'users', ['username'], unique=True)
+    op.create_table('flashcard_sets',
+    sa.Column('id', sa.Integer(), nullable=False),
+    sa.Column('title', sa.String(), nullable=True),
+    sa.Column('owner_id', sa.Integer(), nullable=True),
+    sa.ForeignKeyConstraint(['owner_id'], ['users.id'], ),
+    sa.PrimaryKeyConstraint('id')
+    )
+    op.create_index(op.f('ix_flashcard_sets_id'), 'flashcard_sets', ['id'], unique=False)
+    op.create_index(op.f('ix_flashcard_sets_title'), 'flashcard_sets', ['title'], unique=False)
+    op.create_table('flashcards',
+    sa.Column('id', sa.Integer(), nullable=False),
+    sa.Column('question', sa.String(), nullable=True),
+    sa.Column('answer', sa.String(), nullable=True),
+    sa.Column('flashcard_set_id', sa.Integer(), nullable=True),
+    sa.ForeignKeyConstraint(['flashcard_set_id'], ['flashcard_sets.id'], ),
+    sa.PrimaryKeyConstraint('id')
+    )
+    op.create_index(op.f('ix_flashcards_id'), 'flashcards', ['id'], unique=False)
+    # ### end Alembic commands ###
+
+
+def downgrade() -> None:
+    """Downgrade schema."""
+    # ### commands auto generated by Alembic - please adjust! ###
+    op.drop_index(op.f('ix_flashcards_id'), table_name='flashcards')
+    op.drop_table('flashcards')
+    op.drop_index(op.f('ix_flashcard_sets_title'), table_name='flashcard_sets')
+    op.drop_index(op.f('ix_flashcard_sets_id'), table_name='flashcard_sets')
+    op.drop_table('flashcard_sets')
+    op.drop_index(op.f('ix_users_username'), table_name='users')
+    op.drop_index(op.f('ix_users_id'), table_name='users')
+    op.drop_table('users')
+    # ### end Alembic commands ###
+
+
+
+================================================
+FILE: migrations/versions/6a01f0f00fa4_rename_password_hash.py
+================================================
+"""rename_password_hash
+
+Revision ID: 6a01f0f00fa4
+Revises: 530c3932bfaa
+Create Date: 2025-08-04 21:42:22.986735
+
+"""
+from typing import Sequence, Union
+
+from alembic import op
+import sqlalchemy as sa
+
+# revision identifiers, used by Alembic.
+revision: str = '6a01f0f00fa4'
+down_revision: Union[str, Sequence[str], None] = '530c3932bfaa'
+branch_labels: Union[str, Sequence[str], None] = None
+depends_on: Union[str, Sequence[str], None] = None
+
+def upgrade() -> None:
+    """Upgrade schema."""
+    # flashcard_sets - dodanie user_id itd
+    with op.batch_alter_table('flashcard_sets', schema=None) as batch_op:
+        batch_op.add_column(sa.Column('user_id', sa.Integer(), nullable=False))
+        batch_op.add_column(sa.Column('name', sa.String(), nullable=False))
+        batch_op.add_column(sa.Column('created_at', sa.DateTime(), nullable=True))
+        batch_op.add_column(sa.Column('updated_at', sa.DateTime(), nullable=True))
+        batch_op.drop_index(batch_op.f('ix_flashcard_sets_title'))
+        batch_op.create_unique_constraint('_user_set_name_uc', ['user_id', 'name'])
+        batch_op.create_foreign_key('fk_flashcard_sets_user_id', 'users', ['user_id'], ['id'])
+        batch_op.drop_column('title')
+        batch_op.drop_column('owner_id')
+
+    # flashcards - podanie jawnej nazwy dla foreign key
+    with op.batch_alter_table('flashcards', schema=None) as batch_op:
+        batch_op.add_column(sa.Column('set_id', sa.Integer(), nullable=False))
+        batch_op.add_column(sa.Column('created_at', sa.DateTime(), nullable=True))
+        batch_op.add_column(sa.Column('updated_at', sa.DateTime(), nullable=True))
+        batch_op.alter_column('question', existing_type=sa.VARCHAR(), nullable=False)
+        batch_op.alter_column('answer', existing_type=sa.VARCHAR(), nullable=False)
+        batch_op.create_foreign_key('fk_flashcards_set_id', 'flashcard_sets', ['set_id'], ['id'])
+        batch_op.drop_column('flashcard_set_id')
+
+def downgrade() -> None:
+    """Downgrade schema."""
+    with op.batch_alter_table('users', schema=None) as batch_op:
+        batch_op.alter_column('password_hash', new_column_name='hashed_password', existing_type=sa.String(), nullable=True)
+        batch_op.drop_column('updated_at')
+        batch_op.drop_column('created_at')
+        batch_op.alter_column('username', existing_type=sa.VARCHAR(), nullable=True)
+
+    with op.batch_alter_table('flashcards', schema=None) as batch_op:
+        batch_op.add_column(sa.Column('flashcard_set_id', sa.INTEGER(), nullable=True))
+        batch_op.drop_constraint('fk_flashcards_set_id', type_='foreignkey')
+        batch_op.create_foreign_key('fk_flashcards_flashcard_set_id', 'flashcard_sets', ['flashcard_set_id'], ['id'])
+        batch_op.alter_column('answer', existing_type=sa.VARCHAR(), nullable=True)
+        batch_op.alter_column('question', existing_type=sa.VARCHAR(), nullable=True)
+        batch_op.drop_column('updated_at')
+        batch_op.drop_column('created_at')
+        batch_op.drop_column('set_id')
+
+    with op.batch_alter_table('flashcard_sets', schema=None) as batch_op:
+        batch_op.add_column(sa.Column('owner_id', sa.INTEGER(), nullable=True))
+        batch_op.add_column(sa.Column('title', sa.VARCHAR(), nullable=True))
+        batch_op.drop_constraint('_user_set_name_uc', type_='unique')
+        batch_op.drop_constraint('fk_flashcard_sets_user_id', type_='foreignkey')
+        batch_op.create_foreign_key('fk_flashcard_sets_owner_id', 'users', ['owner_id'], ['id'])
+        batch_op.create_index(batch_op.f('ix_flashcard_sets_title'), ['title'], unique=False)
+        batch_op.drop_column('updated_at')
+        batch_op.drop_column('created_at')
+        batch_op.drop_column('name')
+        batch_op.drop_column('user_id')
+
+
+
+================================================
+FILE: tests/test_users.py
+================================================
+from fastapi.testclient import TestClient
+from app.main import app
+from app.dependencies import get_db
+from sqlalchemy import create_engine
+from sqlalchemy.orm import sessionmaker
+from app.models.models import Base
+import pytest
+
+# UĹĽyj innej bazy danych dla testĂłw
+SQLALCHEMY_DATABASE_URL = "sqlite:///./test.db"
+engine = create_engine(SQLALCHEMY_DATABASE_URL, connect_args={"check_same_thread": False})
+TestingSessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+
+# Nadpisz get_db, aby uĹĽywaÄ‡ testowej bazy danych
+@pytest.fixture(name="db_session")
+def db_session_fixture():
+    Base.metadata.create_all(bind=engine)  # UtwĂłrz tabele
+    db = TestingSessionLocal()
+    try:
+        yield db
+    finally:
+        db.close()
+        Base.metadata.drop_all(bind=engine)  # UsuĹ„ tabele po testach
+
+def override_get_db():
+    db = TestingSessionLocal()
+    try:
+        yield db
+    finally:
+        db.close()
+
+app.dependency_overrides[get_db] = override_get_db
+
+client = TestClient(app)
+
+def test_create_user():
+    response = client.post(
+        "/users",
+        json={"username": "testuser", "password": "testpassword"}
+    )
+    assert response.status_code == 201
+    data = response.json()
+    assert data["username"] == "testuser"
+    assert "id" in data
+    assert "created_at" in data
+    assert "updated_at" in data
+
+def test_create_existing_user():
+    # UtwĂłrz uĹĽytkownika po raz pierwszy
+    client.post(
+        "/users",
+        json={"username": "existinguser", "password": "testpassword"}
+    )
+    # SprĂłbuj utworzyÄ‡ tego samego uĹĽytkownika ponownie
+    response = client.post(
+        "/users",
+        json={"username": "existinguser", "password": "anotherpassword"}
+    )
+    assert response.status_code == 400
+    assert response.json() == {"detail": "Username already registered"}
+
+
+
+================================================
+FILE: .ai/api-plan.md
+================================================
+# REST API Plan
+
+## 1. Resources
+
+-   **User**: Represents user accounts. Mapped to the `users` table.
+-   **Token**: Represents the authentication token for a user. Not a database table, used for authentication.
+-   **FlashcardSet**: Represents a collection of flashcards. Mapped to the `flashcard_sets` table.
+-   **Flashcard**: Represents a single flashcard. Mapped to the `flashcards` table.
+-   **AI**: A non-RESTful resource for handling specific business logic like AI-powered generation.
+
+## 2. Endpoints
+
+### Authentication
+
+#### POST /token
+
+-   **Description**: Authenticates a user and returns an access token.
+-   **Request Body**: `application/x-www-form-urlencoded`
+    -   `username`: The user's username.
+    -   `password`: The user's password.
+-   **Response Body**:
+    ```json
+    {
+      "access_token": "string",
+      "token_type": "bearer"
+    }
+    ```
+-   **Success Code**: `200 OK`
+-   **Error Codes**:
+    -   `400 Bad Request`: If credentials are not valid.
+
+### Users
+
+#### POST /users
+
+-   **Description**: Creates a new user account.
+-   **Request Body**:
+    ```json
+    {
+      "username": "string",
+      "password": "string"
+    }
+    ```
+-   **Response Body**:
+    ```json
+    {
+      "id": 1,
+      "username": "string",
+      "created_at": "2025-08-04T10:00:00Z"
+    }
+    ```
+-   **Success Code**: `201 Created`
+-   **Error Codes**:
+    -   `400 Bad Request`: If the username already exists.
+    -   `422 Unprocessable Entity`: If the request payload is invalid.
+
+### AI Generation
+
+#### POST /ai/generate-flashcards
+
+-   **Description**: Generates a list of flashcard pairs (question/answer) from a given text. This endpoint is protected and requires authentication.
+-   **Request Body**:
+    ```json
+    {
+      "text": "string",
+      "count": "integer"
+    }
+    ```
+-   **Response Body**:
+    ```json
+    {
+      "flashcards": [
+        {
+          "question": "string",
+          "answer": "string"
+        }
+      ]
+    }
+    ```
+-   **Success Code**: `200 OK`
+-   **Error Codes**:
+    -   `401 Unauthorized`: If the user is not authenticated.
+    -   `422 Unprocessable Entity`: If the request payload is invalid (e.g., empty text).
+    -   `500 Internal Server Error`: If communication with the Ollama service fails.
+
+### Flashcard Sets
+
+#### POST /flashcard-sets
+
+-   **Description**: Creates a new flashcard set from a list of generated flashcards. This endpoint is protected.
+-   **Request Body**:
+    ```json
+    {
+      "name": "string",
+      "flashcards": [
+        {
+          "question": "string",
+          "answer": "string"
+        }
+      ]
+    }
+    ```
+-   **Response Body**:
+    ```json
+    {
+      "id": 1,
+      "user_id": 1,
+      "name": "string",
+      "created_at": "2025-08-04T10:00:00Z",
+      "flashcards": [
+        {
+          "id": 1,
+          "question": "string",
+          "answer": "string"
+        }
+      ]
+    }
+    ```
+-   **Success Code**: `201 Created`
+-   **Error Codes**:
+    -   `400 Bad Request`: If a set with the same name already exists for this user.
+    -   `401 Unauthorized`: If the user is not authenticated.
+    -   `422 Unprocessable Entity`: If the request payload is invalid.
+
+#### GET /flashcard-sets
+
+-   **Description**: Retrieves a list of all flashcard sets for the authenticated user. This endpoint is protected.
+-   **Query Parameters**:
+    -   `skip` (integer, optional, default: 0): Number of records to skip for pagination.
+    -   `limit` (integer, optional, default: 100): Maximum number of records to return.
+-   **Response Body**:
+    ```json
+    [
+      {
+        "id": 1,
+        "user_id": 1,
+        "name": "string",
+        "created_at": "2025-08-04T10:00:00Z"
+      }
+    ]
+    ```
+-   **Success Code**: `200 OK`
+-   **Error Codes**:
+    -   `401 Unauthorized`: If the user is not authenticated.
+
+#### GET /flashcard-sets/{set_id}
+
+-   **Description**: Retrieves a single flashcard set by its ID, including all its flashcards. This endpoint is protected.
+-   **Response Body**:
+    ```json
+    {
+      "id": 1,
+      "user_id": 1,
+      "name": "string",
+      "created_at": "2025-08-04T10:00:00Z",
+      "flashcards": [
+        {
+          "id": 1,
+          "set_id": 1,
+          "question": "string",
+          "answer": "string"
+        }
+      ]
+    }
+    ```
+-   **Success Code**: `200 OK`
+-   **Error Codes**:
+    -   `401 Unauthorized`: If the user is not authenticated.
+    -   `403 Forbidden`: If the user does not own the flashcard set.
+    -   `404 Not Found`: If the flashcard set does not exist.
+
+#### DELETE /flashcard-sets/{set_id}
+
+-   **Description**: Deletes a flashcard set and all its associated flashcards. This endpoint is protected.
+-   **Response Body**:
+    ```json
+    {
+      "message": "Flashcard set deleted successfully"
+    }
+    ```
+-   **Success Code**: `200 OK`
+-   **Error Codes**:
+    -   `401 Unauthorized`: If the user is not authenticated.
+    -   `403 Forbidden`: If the user does not own the flashcard set.
+    -   `404 Not Found`: If the flashcard set does not exist.
+
+### Flashcards
+
+#### PUT /flashcards/{card_id}
+
+-   **Description**: Updates the content of a single flashcard. This endpoint is protected.
+-   **Request Body**:
+    ```json
+    {
+      "question": "string",
+      "answer": "string"
+    }
+    ```
+-   **Response Body**:
+    ```json
+    {
+      "id": 1,
+      "set_id": 1,
+      "question": "string",
+      "answer": "string",
+      "updated_at": "2025-08-04T11:00:00Z"
+    }
+    ```
+-   **Success Code**: `200 OK`
+-   **Error Codes**:
+    -   `401 Unauthorized`: If the user is not authenticated.
+    -   `403 Forbidden`: If the user does not own the flashcard.
+    -   `404 Not Found`: If the flashcard does not exist.
+    -   `422 Unprocessable Entity`: If the request payload is invalid.
+
+## 3. Authentication and Authorization
+
+-   **Authentication Mechanism**: The API will use **OAuth2 Password Flow with Bearer Tokens**. A user sends their `username` and `password` to the `/token` endpoint to receive a JWT `access_token`.
+-   **Implementation**: This token must be included in the `Authorization` header for all protected endpoints (e.g., `Authorization: Bearer <token>`). FastAPI's `OAuth2PasswordBearer` will be used to manage token extraction.
+-   **Authorization**: Application-level logic will ensure users can only access or modify their own resources. After a user is authenticated via their token, API service functions will query for resources by their ID *and* the `user_id` from the token, preventing access to other users' data.
+
+## 4. Validation and Business Logic
+
+-   **Validation**: Input validation will be handled by **Pydantic** models within FastAPI. This enforces data types and constraints (e.g., required fields) automatically, returning a `422 Unprocessable Entity` response for invalid payloads.
+    -   **User**: `username` must be a non-empty string. `password` must be a non-empty string.
+    -   **FlashcardSet**: `name` must be a non-empty string. `flashcards` must be a list of valid flashcard objects.
+    -   **Flashcard**: `question` and `answer` must be non-empty strings.
+-   **Database Constraints**: Unique constraints (e.g., `users.username`, `flashcard_sets(user_id, name)`) are enforced at the database level. The API will catch `IntegrityError` exceptions and convert them into user-friendly `400 Bad Request` error responses.
+-   **Business Logic**:
+    -   **AI Generation**: The `POST /ai/generate-flashcards` endpoint encapsulates the logic of communicating with the Ollama service. It will use the `HTTPX` library for asynchronous HTTP requests to avoid blocking the server.
+    -   **Timestamp Updates**: The `updated_at` fields in the database will be updated by the application logic within the corresponding `UPDATE` service functions.
+
+
+
+================================================
+FILE: .ai/db-plan.md
+================================================
+# SQLite Database Schema & Migration Plan: AI Flashcard Generator
+
+This document outlines the database schema for the AI Flashcard Generator project, designed for SQLite, and includes the strategy for managing schema changes using migrations.
+
+## 1. Tables
+
+### `users`
+| Column Name     | Data Type | Constraints                               | Description                              |
+|-----------------|-----------|-------------------------------------------|------------------------------------------|
+| `id`            | `INTEGER` | `PRIMARY KEY AUTOINCREMENT`               | Unique identifier for the user.          |
+| `username`      | `TEXT`    | `UNIQUE`, `NOT NULL`                      | User's unique username.                  |
+| `password_hash` | `TEXT`    | `NOT NULL`                                | Hashed password (e.g., using Bcrypt).    |
+| `created_at`    | `DATETIME`| `NOT NULL DEFAULT CURRENT_TIMESTAMP`      | Timestamp of user account creation.      |
+| `updated_at`    | `DATETIME`| `NOT NULL DEFAULT CURRENT_TIMESTAMP`      | Timestamp of the last user data update.  |
+
+### `flashcard_sets`
+| Column Name  | Data Type | Constraints                                                              | Description                               |
+|--------------|-----------|--------------------------------------------------------------------------|-------------------------------------------|
+| `id`         | `INTEGER` | `PRIMARY KEY AUTOINCREMENT`                                              | Unique identifier for the flashcard set.  |
+| `user_id`    | `INTEGER` | `NOT NULL`, `REFERENCES users(id) ON DELETE CASCADE`                     | References the user who owns the set.     |
+| `name`       | `TEXT`    | `NOT NULL`                                                               | Name of the flashcard set.                |
+| `created_at` | `DATETIME`| `NOT NULL DEFAULT CURRENT_TIMESTAMP`                                     | Timestamp of set creation.                |
+| `updated_at` | `DATETIME`| `NOT NULL DEFAULT CURRENT_TIMESTAMP`                                     | Timestamp of the last set update.         |
+|              |           | `UNIQUE (user_id, name)`                                                 | Ensures set names are unique per user.    |
+
+### `flashcards`
+| Column Name  | Data Type | Constraints                                                                | Description                               |
+|--------------|-----------|----------------------------------------------------------------------------|-------------------------------------------|
+| `id`         | `INTEGER` | `PRIMARY KEY AUTOINCREMENT`                                              | Unique identifier for the flashcard.      |
+| `set_id`     | `INTEGER` | `NOT NULL`, `REFERENCES flashcard_sets(id) ON DELETE CASCADE`            | References the set this card belongs to.  |
+| `question`   | `TEXT`    | `NOT NULL`                                                                 | The question side of the flashcard.       |
+| `answer`     | `TEXT`    | `NOT NULL`                                                                 | The answer side of the flashcard.         |
+| `created_at` | `DATETIME`| `NOT NULL DEFAULT CURRENT_TIMESTAMP`                                     | Timestamp of flashcard creation.          |
+| `updated_at` | `DATETIME`| `NOT NULL DEFAULT CURRENT_TIMESTAMP`                                     | Timestamp of the last flashcard update.   |
+
+## 2. Relationships
+
+-   **`users` to `flashcard_sets`**: One-to-Many.
+-   **`flashcard_sets` to `flashcards`**: One-to-Many.
+
+## 3. Indexes
+
+1.  **Unique Index on `users(username)`**
+2.  **Unique Composite Index on `flashcard_sets(user_id, name)`**
+3.  **Index on `flashcard_sets(user_id)`**: `CREATE INDEX ix_flashcard_sets_user_id ON flashcard_sets (user_id);`
+4.  **Index on `flashcards(set_id)`**: `CREATE INDEX ix_flashcards_set_id ON flashcards (set_id);`
+
+## 4. Database Migrations with Alembic
+
+To manage changes to the database schema over time, we will use **Alembic**, a database migration tool for SQLAlchemy.
+
+### Setup
+
+1.  **Install Alembic**:
+    ```sh
+    pip install alembic
+    ```
+
+2.  **Initialize Alembic**:
+    Run this command in the project root. It will create a `migrations` directory and an `alembic.ini` configuration file.
+    ```sh
+    alembic init migrations
+    ```
+
+3.  **Configure `alembic.ini`**:
+    Point Alembic to the SQLite database.
+    ```ini
+    sqlalchemy.url = sqlite:///./flashcards.db
+    ```
+
+4.  **Configure `migrations/env.py`**:
+    Connect Alembic to the SQLAlchemy models so it can auto-generate migrations.
+    ```python
+    # At the top of the file
+    from app.models import Base # Adjust the import path as needed
+
+    # Inside the run_migrations_online function
+    target_metadata = Base.metadata
+    ```
+
+### Workflow
+
+1.  **Generate a Migration**:
+    Whenever you change your SQLAlchemy models (e.g., add a table or a column), generate a new migration script.
+    ```sh
+    alembic revision --autogenerate -m "Describe the change here"
+    ```
+    *Example: `alembic revision --autogenerate -m "Create initial tables"`*
+
+2.  **Review the Migration Script**:
+    Alembic will generate a Python file in `migrations/versions/`. Always review this file to ensure it accurately reflects the intended changes.
+
+3.  **Apply the Migration**:
+    Apply the changes to the database.
+    ```sh
+    alembic upgrade head
+    ```
+
+4.  **Downgrade a Migration** (if needed):
+    You can revert the last migration.
+    ```sh
+    alembic downgrade -1
+    ```
+
+## 5. Design Notes
+
+-   **Authorization**: All authorization logic will be handled in the application layer. SQLite does not support Row-Level Security.
+-   **Timestamps**: The `updated_at` column requires application-level logic or a database trigger to be automatically updated on modification.
+-   **Foreign Keys**: `PRAGMA foreign_keys = ON;` must be enabled in SQLite for foreign key constraints to be enforced.
+
+
+================================================
+FILE: .ai/db_podsumowanie.md
+================================================
+<conversation_summary>
+<decisions>
+1.  **System Bazodanowy:** Zostanie uĹĽyty najprostszy system bazodanowy, czyli SQLite, zgodnie z proponowanym stosem technologicznym.
+2.  **Zachowanie Kaskadowe (ON DELETE):** UsuniÄ™cie uĹĽytkownika bÄ™dzie kaskadowo usuwaÄ‡ wszystkie powiÄ…zane zestawy fiszek i fiszki. UsuniÄ™cie zestawu fiszek bÄ™dzie kaskadowo usuwaÄ‡ wszystkie fiszki w tym zestawie.
+3.  **DĹ‚ugoĹ›ci PĂłl Tekstowych:** PrzyjÄ™to nastÄ™pujÄ…ce maksymalne dĹ‚ugoĹ›ci: `username` - 50 znakĂłw, `name` (nazwa zestawu) - 100 znakĂłw, `question` - 255 znakĂłw, `answer` - 500 znakĂłw.
+4.  **UnikalnoĹ›Ä‡ Nazwy Zestawu:** Nazwy zestawĂłw fiszek bÄ™dÄ… unikalne w obrÄ™bie danego uĹĽytkownika (unikalny indeks na parze `user_id`, `name`).
+5.  **Metadane Czasowe:** Do wszystkich gĹ‚Ăłwnych tabel (`User`, `FlashcardSet`, `Flashcard`) zostanÄ… dodane kolumny `created_at` i `updated_at`.
+6.  **Haszowanie HaseĹ‚:** HasĹ‚a uĹĽytkownikĂłw bÄ™dÄ… haszowane przy uĹĽyciu algorytmu Bcrypt za poĹ›rednictwem biblioteki `passlib`.
+7.  **Dane UĹĽytkownika:** W tabeli `User` nie bÄ™dzie przechowywany adres e-mail uĹĽytkownika w ramach MVP.
+8.  **Indeksy Kluczy Obcych:** ZostanÄ… jawnie utworzone indeksy na kolumnach kluczy obcych (`user_id` w `FlashcardSet` i `set_id` w `Flashcard`).
+</decisions>
+
+<matched_recommendations>
+1.  **Rekomendacja dotyczÄ…ca wyboru systemu bazodanowego:** ZostaĹ‚a zaakceptowana decyzja o pozostaniu przy SQLite ze wzglÄ™du na prostotÄ™ i szybkoĹ›Ä‡ wdroĹĽenia MVP.
+2.  **Rekomendacja dotyczÄ…ca zachowania kaskadowego:** ZostaĹ‚a zaakceptowana reguĹ‚a `ON DELETE CASCADE` dla relacji miÄ™dzy `User` a `FlashcardSet` oraz `FlashcardSet` a `Flashcard`.
+3.  **Rekomendacja dotyczÄ…ca limitĂłw dĹ‚ugoĹ›ci pĂłl tekstowych:** ZostaĹ‚a zaakceptowana propozycja konkretnych limitĂłw dĹ‚ugoĹ›ci dla pĂłl tekstowych.
+4.  **Rekomendacja dotyczÄ…ca unikalnoĹ›ci nazwy zestawu:** ZostaĹ‚a zaakceptowana propozycja naĹ‚oĹĽenia ograniczenia unikalnoĹ›ci na parÄ™ (`user_id`, `name`) w tabeli `FlashcardSet`.
+5.  **Rekomendacja dotyczÄ…ca metadanych czasowych:** ZostaĹ‚a zaakceptowana propozycja dodania kolumn `created_at` i `updated_at` do gĹ‚Ăłwnych tabel.
+6.  **Rekomendacja dotyczÄ…ca haszowania haseĹ‚:** ZostaĹ‚a zaakceptowana propozycja uĹĽycia `passlib` z `bcrypt` jako najprostszej i najbezpieczniejszej implementacji.
+7.  **Rekomendacja dotyczÄ…ca danych uĹĽytkownika (email):** Moja rekomendacja rozwaĹĽenia emaila zostaĹ‚a odrzucona na rzecz nieprzechowywania go w MVP.
+8.  **Rekomendacja dotyczÄ…ca indeksĂłw kluczy obcych:** ZostaĹ‚a zaakceptowana propozycja jawnego zdefiniowania indeksĂłw na kolumnach kluczy obcych.
+9.  **Rekomendacja dotyczÄ…ca gotowoĹ›ci do schematu:** ZostaĹ‚a zaakceptowana gotowoĹ›Ä‡ do przejĹ›cia do tworzenia ostatecznego schematu bazy danych.
+</matched_recommendations>
+
+<database_planning_summary>
+Planowanie schematu bazy danych dla MVP Generatora Fiszek AI skupiĹ‚o siÄ™ na minimalizmie i efektywnoĹ›ci, aby sprostaÄ‡ wyzwaniu 28-godzinnego czasu realizacji. Wybrano bazÄ™ danych SQLite ze wzglÄ™du na jej prostotÄ™ i brak koniecznoĹ›ci konfiguracji serwera, co jest kluczowe dla szybkiego wdroĹĽenia.
+
+**a. GĹ‚Ăłwne wymagania dotyczÄ…ce schematu bazy danych:**
+Schemat bÄ™dzie obejmowaĹ‚ trzy gĹ‚Ăłwne tabele: `User`, `FlashcardSet` i `Flashcard`. Wszystkie tabele bÄ™dÄ… zawieraĹ‚y kolumny `id` (klucz gĹ‚Ăłwny) oraz `created_at` i `updated_at` do Ĺ›ledzenia czasu utworzenia i modyfikacji. HasĹ‚a uĹĽytkownikĂłw bÄ™dÄ… bezpiecznie haszowane przy uĹĽyciu Bcrypt.
+
+**b. Kluczowe encje i ich relacje:**
+*   **User (UĹĽytkownik):**
+    *   Atrybuty: `id` (PRIMARY KEY), `username` (VARCHAR(50), UNIQUE), `password_hash` (VARCHAR(255)), `created_at`, `updated_at`.
+    *   Relacje: Jeden uĹĽytkownik moĹĽe posiadaÄ‡ wiele zestawĂłw fiszek (One-to-Many z `FlashcardSet`).
+*   **FlashcardSet (Zestaw Fiszek):**
+    *   Atrybuty: `id` (PRIMARY KEY), `user_id` (FOREIGN KEY do `User.id`), `name` (VARCHAR(100)), `created_at`, `updated_at`.
+    *   Ograniczenia: Para (`user_id`, `name`) musi byÄ‡ unikalna.
+    *   Relacje: Jeden zestaw fiszek naleĹĽy do jednego uĹĽytkownika (Many-to-One z `User`). Jeden zestaw fiszek moĹĽe zawieraÄ‡ wiele pojedynczych fiszek (One-to-Many z `Flashcard`).
+*   **Flashcard (Fiszka):**
+    *   Atrybuty: `id` (PRIMARY KEY), `set_id` (FOREIGN KEY do `FlashcardSet.id`), `question` (TEXT/VARCHAR(255)), `answer` (TEXT/VARCHAR(500)), `created_at`, `updated_at`.
+    *   Relacje: Jedna fiszka naleĹĽy do jednego zestawu fiszek (Many-to-One z `FlashcardSet`).
+
+**c. WaĹĽne kwestie dotyczÄ…ce bezpieczeĹ„stwa i skalowalnoĹ›ci:**
+*   **BezpieczeĹ„stwo:** HasĹ‚a uĹĽytkownikĂłw bÄ™dÄ… bezpiecznie haszowane przy uĹĽyciu Bcrypt. Ze wzglÄ™du na uĹĽycie SQLite, bezpieczeĹ„stwo na poziomie wierszy (RLS) nie bÄ™dzie implementowane w bazie danych; zamiast tego, logika autoryzacji (zapewniajÄ…ca, ĹĽe uĹĽytkownik ma dostÄ™p tylko do swoich danych) zostanie zaimplementowana w warstwie aplikacji (FastAPI).
+*   **SkalowalnoĹ›Ä‡:** Dla MVP, SQLite jest wystarczajÄ…cy. Jawne indeksowanie kluczy obcych zapewni dobrÄ… wydajnoĹ›Ä‡ zapytaĹ„. W przyszĹ‚oĹ›ci, w przypadku wzrostu liczby uĹĽytkownikĂłw i danych, migracja do bardziej skalowalnej bazy danych (np. PostgreSQL) bÄ™dzie wymagaĹ‚a dostosowania, ale podstawowy schemat relacji pozostanie stabilny.
+
+**d. Wszelkie nierozwiÄ…zane kwestie lub obszary wymagajÄ…ce dalszego wyjaĹ›nienia:**
+Wszystkie kluczowe aspekty planowania schematu bazy danych zostaĹ‚y rozwiÄ…zane i podjÄ™to decyzje. Nie ma nierozwiÄ…zanych kwestii dotyczÄ…cych samego schematu bazy danych.
+</database_planning_summary>
+
+<unresolved_issues>
+Brak nierozwiÄ…zanych kwestii dotyczÄ…cych planowania schematu bazy danych.
+</unresolved_issues>
+</conversation_summary>
+
+
+================================================
+FILE: .ai/delete-flashcard-sets-by-id-implementation-plan.md
+================================================
+# API Endpoint Implementation Plan: DELETE /flashcard-sets/{set_id}
+
+## 1. PrzeglÄ…d punktu koĹ„cowego
+
+Ten punkt koĹ„cowy umoĹĽliwia usuniÄ™cie pojedynczego zestawu fiszek wraz ze wszystkimi powiÄ…zanymi z nim fiszkami. DostÄ™p jest ograniczony do wĹ‚aĹ›ciciela zestawu.
+
+## 2. SzczegĂłĹ‚y ĹĽÄ…dania
+
+-   **Metoda HTTP**: `DELETE`
+-   **Struktura URL**: `/flashcard-sets/{set_id}`
+-   **Parametry**: 
+    -   `set_id` (integer, wymagane): Unikalny identyfikator zestawu fiszek do usuniÄ™cia.
+
+## 3. Wykorzystywane typy
+
+-   **Model Bazy Danych**: `models.FlashcardSet` (dla interakcji z bazÄ… danych)
+
+## 4. SzczegĂłĹ‚y odpowiedzi
+
+-   **OdpowiedĹş sukcesu (200 OK)**:
+    ```json
+    {
+      "message": "Flashcard set deleted successfully"
+    }
+    ```
+-   **Odpowiedzi bĹ‚Ä™dĂłw**:
+    -   `401 Unauthorized`: JeĹ›li uĹĽytkownik nie jest uwierzytelniony.
+    -   `403 Forbidden`: JeĹ›li uwierzytelniony uĹĽytkownik nie jest wĹ‚aĹ›cicielem zestawu fiszek.
+    -   `404 Not Found`: JeĹ›li zestaw fiszek o podanym `set_id` nie istnieje.
+    -   `422 Unprocessable Entity`: JeĹ›li `set_id` jest nieprawidĹ‚owy (np. nie jest liczbÄ… caĹ‚kowitÄ…).
+    -   `500 Internal Server Error`: W przypadku nieoczekiwanego bĹ‚Ä™du serwera.
+
+## 5. PrzepĹ‚yw danych
+
+1.  Klient wysyĹ‚a ĹĽÄ…danie `DELETE` na adres `/flashcard-sets/{set_id}`.
+2.  Router FastAPI przechwytuje ĹĽÄ…danie.
+3.  Punkt koĹ„cowy wymaga uwierzytelnienia uĹĽytkownika i pobiera `current_user`.
+4.  `set_id` jest automatycznie walidowany przez FastAPI.
+5.  Punkt koĹ„cowy wywoĹ‚uje funkcjÄ™ serwisowÄ… (np. `crud.delete_flashcard_set`), przekazujÄ…c `set_id`, `user_id` i instancjÄ™ sesji bazy danych.
+6.  Funkcja serwisowa najpierw prĂłbuje pobraÄ‡ zestaw fiszek o podanym `set_id` i naleĹĽÄ…cy do danego `user_id`.
+7.  JeĹ›li zestaw nie zostanie znaleziony (lub nie naleĹĽy do uĹĽytkownika), funkcja serwisowa zgĹ‚asza bĹ‚Ä…d (np. `HTTPException` 404 lub 403).
+8.  JeĹ›li zestaw zostanie znaleziony, jest on usuwany z bazy danych. DziÄ™ki `ON DELETE CASCADE` w definicji modelu `flashcards`, wszystkie powiÄ…zane fiszki zostanÄ… automatycznie usuniÄ™te.
+9.  Funkcja serwisowa zwraca potwierdzenie usuniÄ™cia.
+10. Punkt koĹ„cowy zwraca odpowiedĹş `200 OK` z komunikatem o sukcesie.
+
+## 6. WzglÄ™dy bezpieczeĹ„stwa
+
+-   **Uwierzytelnienie**: Punkt koĹ„cowy jest chroniony i dostÄ™pny tylko dla uwierzytelnionych uĹĽytkownikĂłw.
+-   **Autoryzacja**: UsuniÄ™cie jest moĹĽliwe tylko dla zestawĂłw naleĹĽÄ…cych do uwierzytelnionego uĹĽytkownika. Zapobiega to przypadkowemu lub zĹ‚oĹ›liwemu usuniÄ™ciu danych innych uĹĽytkownikĂłw.
+-   **Walidacja parametrĂłw**: FastAPI automatycznie waliduje `set_id`.
+
+## 7. ObsĹ‚uga bĹ‚Ä™dĂłw
+
+-   `401 Unauthorized`: JeĹ›li uĹĽytkownik nie jest uwierzytelniony.
+-   `403 Forbidden`: JeĹ›li uwierzytelniony uĹĽytkownik prĂłbuje usunÄ…Ä‡ zestaw, ktĂłry nie naleĹĽy do niego.
+-   `404 Not Found`: JeĹ›li zestaw fiszek o podanym `set_id` nie istnieje lub nie naleĹĽy do uwierzytelnionego uĹĽytkownika.
+-   `422 Unprocessable Entity`: JeĹ›li `set_id` jest nieprawidĹ‚owy.
+-   `500 Internal Server Error`: W przypadku nieoczekiwanego bĹ‚Ä™du serwera podczas interakcji z bazÄ… danych.
+
+## 8. RozwaĹĽania dotyczÄ…ce wydajnoĹ›ci
+
+-   **Operacja usuniÄ™cia**: UsuniÄ™cie zestawu i kaskadowe usuniÄ™cie fiszek powinno byÄ‡ szybkie, zwĹ‚aszcza przy uĹĽyciu indeksĂłw.
+
+## 9. Etapy wdroĹĽenia
+
+1.  **CRUD Operations**: W pliku `app/crud/crud.py` zaimplementuj funkcjÄ™ `delete_flashcard_set(db: Session, set_id: int, user_id: int)`.
+    -   Funkcja ta powinna pobraÄ‡ zestaw po `set_id` i `user_id`.
+    -   JeĹ›li zestaw nie istnieje lub nie naleĹĽy do uĹĽytkownika, zgĹ‚oĹ› `HTTPException` (404 lub 403).
+    -   UsuĹ„ zestaw z bazy danych.
+2.  **Router**: W pliku `app/routers/flashcards.py`:
+    -   Zaimplementuj punkt koĹ„cowy `DELETE /flashcard-sets/{set_id}`.
+    -   Wstrzyknij zaleĹĽnoĹ›ci: `db: Session = Depends(get_db)` i `current_user: models.User = Depends(get_current_user)`.
+    -   Pobierz `set_id` ze Ĺ›cieĹĽki.
+    -   WywoĹ‚aj `crud.delete_flashcard_set`, przekazujÄ…c `set_id` i `current_user.id`.
+    -   ZwrĂłÄ‡ odpowiedĹş `200 OK` z komunikatem o sukcesie.
+3.  **Integracja**: Upewnij siÄ™, ĹĽe router jest doĹ‚Ä…czony do gĹ‚Ăłwnej instancji aplikacji FastAPI w `app/main.py`.
+
+
+================================================
+FILE: .ai/get-flashcard-sets-by-id-implementation-plan.md
+================================================
+# API Endpoint Implementation Plan: GET /flashcard-sets/{set_id}
+
+## 1. PrzeglÄ…d punktu koĹ„cowego
+
+Ten punkt koĹ„cowy umoĹĽliwia pobranie szczegĂłĹ‚owych informacji o pojedynczym zestawie fiszek, w tym wszystkich fiszek naleĹĽÄ…cych do tego zestawu. DostÄ™p jest ograniczony do wĹ‚aĹ›ciciela zestawu.
+
+## 2. SzczegĂłĹ‚y ĹĽÄ…dania
+
+-   **Metoda HTTP**: `GET`
+-   **Struktura URL**: `/flashcard-sets/{set_id}`
+-   **Parametry**: 
+    -   `set_id` (integer, wymagane): Unikalny identyfikator zestawu fiszek.
+
+## 3. Wykorzystywane typy
+
+-   **DTO (Data Transfer Object)**: `schemas.FlashcardSetDetail` (dla danych wyjĹ›ciowych odpowiedzi, zawiera zagnieĹĽdĹĽone fiszki)
+-   **Model Bazy Danych**: `models.FlashcardSet`, `models.Flashcard` (dla interakcji z bazÄ… danych)
+
+## 4. SzczegĂłĹ‚y odpowiedzi
+
+-   **OdpowiedĹş sukcesu (200 OK)**:
+    ```json
+    {
+      "id": 1,
+      "user_id": 1,
+      "name": "string",
+      "created_at": "2025-08-04T10:00:00Z",
+      "flashcards": [
+        {
+          "id": 1,
+          "set_id": 1,
+          "question": "string",
+          "answer": "string"
+        }
+      ]
+    }
+    ```
+    -   **Schemat**: `schemas.FlashcardSetDetail`
+-   **Odpowiedzi bĹ‚Ä™dĂłw**:
+    -   `401 Unauthorized`: JeĹ›li uĹĽytkownik nie jest uwierzytelniony.
+    -   `403 Forbidden`: JeĹ›li uwierzytelniony uĹĽytkownik nie jest wĹ‚aĹ›cicielem zestawu fiszek.
+    -   `404 Not Found`: JeĹ›li zestaw fiszek o podanym `set_id` nie istnieje.
+    -   `422 Unprocessable Entity`: JeĹ›li `set_id` jest nieprawidĹ‚owy (np. nie jest liczbÄ… caĹ‚kowitÄ…).
+    -   `500 Internal Server Error`: W przypadku nieoczekiwanego bĹ‚Ä™du serwera.
+
+## 5. PrzepĹ‚yw danych
+
+1.  Klient wysyĹ‚a ĹĽÄ…danie `GET` na adres `/flashcard-sets/{set_id}`.
+2.  Router FastAPI przechwytuje ĹĽÄ…danie.
+3.  Punkt koĹ„cowy wymaga uwierzytelnienia uĹĽytkownika i pobiera `current_user`.
+4.  `set_id` jest automatycznie walidowany przez FastAPI.
+5.  Punkt koĹ„cowy wywoĹ‚uje funkcjÄ™ serwisowÄ… (np. `crud.get_flashcard_set`), przekazujÄ…c `set_id`, `user_id` i instancjÄ™ sesji bazy danych.
+6.  Funkcja serwisowa wykonuje zapytanie do bazy danych, aby pobraÄ‡ zestaw fiszek o podanym `set_id` i naleĹĽÄ…cy do danego `user_id`.
+7.  JeĹ›li zestaw nie zostanie znaleziony (lub nie naleĹĽy do uĹĽytkownika), funkcja serwisowa zwraca `None`.
+8.  JeĹ›li zestaw zostanie znaleziony, funkcja serwisowa zwraca obiekt `models.FlashcardSet` (z zaĹ‚adowanymi relacjami do fiszek).
+9.  JeĹ›li funkcja serwisowa zwrĂłci `None`, punkt koĹ„cowy zgĹ‚asza `HTTPException` ze statusem `404 Not Found`.
+10. Punkt koĹ„cowy zwraca odpowiedĹş `200 OK` z zestawem fiszek, sformatowanym zgodnie ze schematem `schemas.FlashcardSetDetail`.
+
+## 6. WzglÄ™dy bezpieczeĹ„stwa
+
+-   **Uwierzytelnienie**: Punkt koĹ„cowy jest chroniony i dostÄ™pny tylko dla uwierzytelnionych uĹĽytkownikĂłw.
+-   **Autoryzacja**: Zapytanie jest filtrowane po `user_id` z tokena, co zapewnia, ĹĽe uĹĽytkownik moĹĽe pobraÄ‡ tylko swoje wĹ‚asne zestawy fiszek. PrĂłba dostÄ™pu do zestawu innego uĹĽytkownika skutkuje bĹ‚Ä™dem `404 Not Found` (lub `403 Forbidden`, jeĹ›li chcemy rozrĂłĹĽniÄ‡).
+-   **Walidacja parametrĂłw**: FastAPI automatycznie waliduje `set_id`.
+
+## 7. ObsĹ‚uga bĹ‚Ä™dĂłw
+
+-   `401 Unauthorized`: JeĹ›li uĹĽytkownik nie jest uwierzytelniony.
+-   `403 Forbidden`: JeĹ›li uwierzytelniony uĹĽytkownik prĂłbuje uzyskaÄ‡ dostÄ™p do zestawu, ktĂłry nie naleĹĽy do niego (alternatywa dla 404, jeĹ›li chcemy ujawniÄ‡ istnienie zasobu).
+-   `404 Not Found`: JeĹ›li zestaw fiszek o podanym `set_id` nie istnieje lub nie naleĹĽy do uwierzytelnionego uĹĽytkownika.
+-   `422 Unprocessable Entity`: JeĹ›li `set_id` jest nieprawidĹ‚owy (np. nie jest liczbÄ… caĹ‚kowitÄ…).
+-   `500 Internal Server Error`: W przypadku nieoczekiwanego bĹ‚Ä™du serwera podczas interakcji z bazÄ… danych.
+
+## 8. RozwaĹĽania dotyczÄ…ce wydajnoĹ›ci
+
+-   **Zapytanie do bazy danych**: Pobieranie pojedynczego zestawu i jego fiszek powinno byÄ‡ szybkie, zwĹ‚aszcza przy uĹĽyciu indeksĂłw na `id` i `set_id`.
+-   **Eager Loading**: NaleĹĽy uĹĽyÄ‡ `joinedload` lub `selectinload` w SQLAlchemy, aby pobraÄ‡ fiszki wraz z zestawem w jednym zapytaniu, unikajÄ…c problemu N+1.
+
+## 9. Etapy wdroĹĽenia
+
+1.  **CRUD Operations**: W pliku `app/crud/crud.py` zaimplementuj funkcjÄ™ `get_flashcard_set(db: Session, set_id: int, user_id: int) -> models.FlashcardSet | None`.
+    -   Funkcja ta powinna pobieraÄ‡ zestaw fiszek po `id` i `user_id`, z zaĹ‚adowanymi fiszkami.
+2.  **Router**: W pliku `app/routers/flashcards.py`:
+    -   Zaimplementuj punkt koĹ„cowy `GET /flashcard-sets/{set_id}`.
+    -   Wstrzyknij zaleĹĽnoĹ›ci: `db: Session = Depends(get_db)` i `current_user: models.User = Depends(get_current_user)`.
+    -   Pobierz `set_id` ze Ĺ›cieĹĽki.
+    -   WywoĹ‚aj `crud.get_flashcard_set`, przekazujÄ…c `set_id` i `current_user.id`.
+    -   JeĹ›li zestaw nie zostanie znaleziony, zgĹ‚oĹ› `HTTPException` ze statusem 404.
+    -   ZwrĂłÄ‡ zestaw w formacie `schemas.FlashcardSetDetail`.
+3.  **Integracja**: Upewnij siÄ™, ĹĽe router jest doĹ‚Ä…czony do gĹ‚Ăłwnej instancji aplikacji FastAPI w `app/main.py`.
+
+
+================================================
+FILE: .ai/get-flashcard-sets-implementation-plan.md
+================================================
+# API Endpoint Implementation Plan: GET /flashcard-sets
+
+## 1. PrzeglÄ…d punktu koĹ„cowego
+
+Ten punkt koĹ„cowy umoĹĽliwia pobranie listy wszystkich zestawĂłw fiszek naleĹĽÄ…cych do uwierzytelnionego uĹĽytkownika. ObsĹ‚uguje paginacjÄ™.
+
+## 2. SzczegĂłĹ‚y ĹĽÄ…dania
+
+-   **Metoda HTTP**: `GET`
+-   **Struktura URL**: `/flashcard-sets`
+-   **Parametry**: 
+    -   `skip` (integer, opcjonalne, domyĹ›lnie: 0): Liczba rekordĂłw do pominiÄ™cia (dla paginacji).
+    -   `limit` (integer, opcjonalne, domyĹ›lnie: 100): Maksymalna liczba rekordĂłw do zwrĂłcenia.
+
+## 3. Wykorzystywane typy
+
+-   **DTO (Data Transfer Object)**: `schemas.FlashcardSet` (dla kaĹĽdego zestawu na liĹ›cie)
+-   **Model Bazy Danych**: `models.FlashcardSet` (dla interakcji z bazÄ… danych)
+
+## 4. SzczegĂłĹ‚y odpowiedzi
+
+-   **OdpowiedĹş sukcesu (200 OK)**:
+    ```json
+    [
+      {
+        "id": 1,
+        "user_id": 1,
+        "name": "string",
+        "created_at": "2025-08-04T10:00:00Z",
+        "updated_at": "2025-08-04T10:00:00Z"
+      }
+    ]
+    ```
+    -   **Schemat**: `List[schemas.FlashcardSet]`
+-   **Odpowiedzi bĹ‚Ä™dĂłw**:
+    -   `401 Unauthorized`: JeĹ›li uĹĽytkownik nie jest uwierzytelniony.
+    -   `422 Unprocessable Entity`: JeĹ›li parametry zapytania sÄ… nieprawidĹ‚owe (np. `skip` lub `limit` sÄ… ujemne).
+    -   `500 Internal Server Error`: W przypadku nieoczekiwanego bĹ‚Ä™du serwera.
+
+## 5. PrzepĹ‚yw danych
+
+1.  Klient wysyĹ‚a ĹĽÄ…danie `GET` na adres `/flashcard-sets` z opcjonalnymi parametrami `skip` i `limit`.
+2.  Router FastAPI przechwytuje ĹĽÄ…danie.
+3.  Punkt koĹ„cowy wymaga uwierzytelnienia uĹĽytkownika i pobiera `current_user`.
+4.  Parametry `skip` i `limit` sÄ… automatycznie walidowane przez FastAPI.
+5.  Punkt koĹ„cowy wywoĹ‚uje funkcjÄ™ serwisowÄ… (np. `crud.get_flashcard_sets`), przekazujÄ…c `user_id`, `skip`, `limit` i instancjÄ™ sesji bazy danych.
+6.  Funkcja serwisowa wykonuje zapytanie do bazy danych, aby pobraÄ‡ zestawy fiszek naleĹĽÄ…ce do danego `user_id`, stosujÄ…c `offset` (skip) i `limit`.
+7.  Funkcja serwisowa zwraca listÄ™ obiektĂłw `models.FlashcardSet`.
+8.  Punkt koĹ„cowy zwraca odpowiedĹş `200 OK` z listÄ… zestawĂłw fiszek, sformatowanych zgodnie ze schematem `List[schemas.FlashcardSet]`.
+
+## 6. WzglÄ™dy bezpieczeĹ„stwa
+
+-   **Uwierzytelnienie**: Punkt koĹ„cowy jest chroniony i dostÄ™pny tylko dla uwierzytelnionych uĹĽytkownikĂłw.
+-   **Autoryzacja**: Zapytania sÄ… filtrowane po `user_id` z tokena, co zapewnia, ĹĽe uĹĽytkownik moĹĽe pobraÄ‡ tylko swoje wĹ‚asne zestawy fiszek.
+-   **Walidacja parametrĂłw**: FastAPI automatycznie waliduje parametry zapytania, zapobiegajÄ…c nieprawidĹ‚owym wartoĹ›ciom.
+
+## 7. ObsĹ‚uga bĹ‚Ä™dĂłw
+
+-   `401 Unauthorized`: JeĹ›li uĹĽytkownik nie jest uwierzytelniony.
+-   `422 Unprocessable Entity`: JeĹ›li `skip` lub `limit` sÄ… nieprawidĹ‚owe (np. ujemne).
+-   `500 Internal Server Error`: W przypadku nieoczekiwanego bĹ‚Ä™du serwera podczas interakcji z bazÄ… danych.
+
+## 8. RozwaĹĽania dotyczÄ…ce wydajnoĹ›ci
+
+-   **Paginacja**: UĹĽycie `skip` i `limit` (offset/limit) jest standardowÄ… metodÄ… paginacji, ktĂłra jest wydajna dla wiÄ™kszoĹ›ci przypadkĂłw. Indeks na `user_id` w tabeli `flashcard_sets` przyspiesza zapytania.
+-   **Liczba rekordĂłw**: DomyĹ›lny limit 100 rekordĂłw zapobiega pobieraniu zbyt duĹĽych zbiorĂłw danych w jednym ĹĽÄ…daniu.
+
+## 9. Etapy wdroĹĽenia
+
+1.  **CRUD Operations**: W pliku `app/crud/crud.py` zaimplementuj funkcjÄ™ `get_flashcard_sets(db: Session, user_id: int, skip: int = 0, limit: int = 100) -> List[models.FlashcardSet]`.
+    -   Funkcja ta powinna wykonywaÄ‡ zapytanie do bazy danych, filtrujÄ…c po `user_id` i stosujÄ…c `offset` oraz `limit`.
+2.  **Router**: W pliku `app/routers/flashcards.py`:
+    -   Zaimplementuj punkt koĹ„cowy `GET /flashcard-sets`.
+    -   Wstrzyknij zaleĹĽnoĹ›ci: `db: Session = Depends(get_db)`, `current_user: models.User = Depends(get_current_user)`, `skip: int = Query(0, ge=0)` i `limit: int = Query(100, ge=0, le=100)`.
+    -   WywoĹ‚aj `crud.get_flashcard_sets`, przekazujÄ…c `current_user.id`, `skip` i `limit`.
+    -   ZwrĂłÄ‡ listÄ™ zestawĂłw w formacie `List[schemas.FlashcardSet]`.
+3.  **Integracja**: Upewnij siÄ™, ĹĽe router jest doĹ‚Ä…czony do gĹ‚Ăłwnej instancji aplikacji FastAPI w `app/main.py`.
+
+
+================================================
+FILE: .ai/opis_do_prd.md
+================================================
+**Cel GĹ‚Ăłwny:**
+Stworzenie w ciÄ…gu 28 godzin w peĹ‚ni funkcjonalnej aplikacji webowej, ktĂłra speĹ‚nia wszystkie wymagania zaliczeniowe. Aplikacja bÄ™dzie sĹ‚uĹĽyÄ‡ dzieciom ze szkoĹ‚y podstawowej do automatycznego generowania fiszek edukacyjnych z podanego tekstu.
+
+**Kluczowe FunkcjonalnoĹ›ci:**
+1.  **Logowanie:** Prosta rejestracja i logowanie uĹĽytkownika na podstawie loginu i hasĹ‚a.
+2.  **Generowanie Fiszek:** UĹĽytkownik wkleja tekst, wybiera jednÄ… z trzech opcji iloĹ›ci ("maĹ‚o", "Ĺ›rednio", "duĹĽo"), a AI (model Mistral przez Ollama) generuje zestaw fiszek.
+3.  **ZarzÄ…dzanie Fiszkami (PeĹ‚ny CRUD):** UĹĽytkownik moĹĽe:
+    *   **ZapisywaÄ‡** wygenerowane zestawy (Create).
+    *   **PrzeglÄ…daÄ‡** listÄ™ swoich zestawĂłw oraz fiszki wewnÄ…trz nich (Read).
+    *   **EdytowaÄ‡** pojedyncze fiszki w zapisanym zestawie (Update).
+    *   **UsuwaÄ‡** caĹ‚e zestawy fiszek (Delete).
+
+**Stos Technologiczny:**
+*   **Backend:** Python (Flask lub FastAPI).
+*   **Baza Danych:** SQLite.
+*   **Frontend:** Podstawowy HTML z formularzami.
+*   **AI:** Model Mistral dostÄ™pny przez API z Ollamy.
+
+**Co jest Poza Zakresem:**
+*   WĹ‚aĹ›ciwy system nauki i powtĂłrek (algorytm SM-2).
+*   Zaawansowany interfejs uĹĽytkownika.
+*   Logowanie przez zewnÄ™trzne serwisy (np. Google).
+
+**GĹ‚Ăłwne Ryzyko i Strategia:**
+NajwiÄ™kszym ryzykiem jest bardzo krĂłtki czas (28 godzin), zwĹ‚aszcza po dodaniu funkcji edycji. Kluczowe dla sukcesu jest Ĺ›cisĹ‚e trzymanie siÄ™ ustalonego, minimalistycznego zakresu i planu pracy, bez dodawania jakichkolwiek nowych funkcjonalnoĹ›ci.
+
+
+
+================================================
+FILE: .ai/opis_projektu.txt
+================================================
+### GĹ‚Ăłwny problem
+Manualne tworzenie wysokiej jakoĹ›ci fiszek edukacyjnych jest czasochĹ‚onne, co zniechÄ™ca do korzystania z efektywnej metody nauki jakÄ… jest spaced repetition.
+
+### Najmniejszy zestaw funkcjonalnoĹ›ci
+- Generowanie fiszek przez AI na podstawie wprowadzonego tekstu (kopiuj-wklej)
+- Manualne tworzenie fiszek
+- PrzeglÄ…danie, edycja i usuwanie fiszek
+- Prosty system kont uĹĽytkownikĂłw do przechowywania fiszek
+- Integracja fiszek z gotowym algorytmem powtĂłrek
+
+### Co NIE wchodzi w zakres MVP
+- WĹ‚asny, zaawansowany algorytm powtĂłrek (jak SuperMemo, Anki)
+- Import wielu formatĂłw (PDF, DOCX, itp.)
+- WspĂłĹ‚dzielenie zestawĂłw fiszek miÄ™dzy uĹĽytkownikami
+- Integracje z innymi platformami edukacyjnymi
+- Aplikacje mobilne (na poczÄ…tek tylko web)
+
+### Kryteria sukcesu
+- 75% fiszek wygenerowanych przez AI jest akceptowane przez uĹĽytkownika
+- UĹĽytkownicy tworzÄ… 75% fiszek z wykorzystaniem AI
+
+
+================================================
+FILE: .ai/podsumowania_do_prd.md
+================================================
+<conversation_summary>
+<decisions>
+Grupa docelowa: Dzieci ze szkoĹ‚y podstawowej.
+TreĹ›ci do przetwarzania: MateriaĹ‚y szkolne z rĂłĹĽnych przedmiotĂłw (np. jÄ™zyk polski, angielski, historia, przyroda), z wyĹ‚Ä…czeniem tabliczki mnoĹĽenia.
+System powtĂłrek: Algorytm SM-2 zostaĹ‚ wybrany jako docelowy, ale jego implementacja zostaĹ‚a odĹ‚oĹĽona na etap po MVP, aby zmieĹ›ciÄ‡ siÄ™ w ramach czasowych.
+Mechanizm logowania: Zostanie zaimplementowany najprostszy system oparty na loginie i haĹ›le.
+Generowanie fiszek przez AI: UĹĽytkownik bÄ™dzie miaĹ‚ kontrolÄ™ nad iloĹ›ciÄ… generowanych fiszek poprzez opcje "maĹ‚o", "Ĺ›rednio", "duĹĽo".
+Technologia AI: Zostanie wykorzystany model Mistral uruchomiony na platformie Ollama, dostÄ™pny przez wewnÄ™trzne API. Backend bÄ™dzie napisany w jÄ™zyku Python.
+ZarzÄ…dzanie fiszkami (CRUD): Aplikacja umoĹĽliwi peĹ‚ne operacje CRUD: tworzenie (zapisywanie) zestawĂłw, przeglÄ…danie ich listy i zawartoĹ›ci (Read), edycjÄ™ pojedynczych fiszek (Update) oraz usuwanie caĹ‚ych zestawĂłw (Delete).
+Proces edycji: Po wygenerowaniu zestawu, uĹĽytkownik bÄ™dzie mĂłgĹ‚ przejrzeÄ‡ wszystkie fiszki, a nastÄ™pnie edytowaÄ‡ kaĹĽdÄ… z nich osobno na dedykowanym, prostym ekranie edycji.
+Zbieranie opinii: W pierwszej wersji MVP nie bÄ™dzie dedykowanego mechanizmu do zbierania opinii od uĹĽytkownikĂłw.
+Ramy czasowe i zakres: Projekt musi zostaÄ‡ zrealizowany w ciÄ…gu 28 godzin (7 dni po 4 godziny) i musi speĹ‚niaÄ‡ 5 konkretnych wymagaĹ„ zaliczeniowych (auth, logika biznesowa z LLM, CRUD, test, CI/CD).
+Architektura techniczna: Backend oparty na lekkim frameworku (Flask/FastAPI), baza danych SQLite oraz prosty frontend w HTML.
+Definicja iloĹ›ci fiszek: Opcje "maĹ‚o", "Ĺ›rednio", "duĹĽo" zostanÄ… zmapowane na konkretne liczby: 5, 10 i 15 fiszek.
+Komunikacja z AI: Wybrana liczba fiszek zostanie przekazana do modelu AI jako precyzyjna, bezpoĹ›rednia instrukcja w prompcie (np. "wygeneruj dokĹ‚adnie 10 fiszek").
+</decisions>
+<matched_recommendations>
+Rekomendacja dotyczÄ…ca prostego scenariusza i architektury: ZostaĹ‚a w peĹ‚ni zaakceptowana. Zdefiniowano kluczowy "happy path" uĹĽytkownika oraz wybrano minimalistyczny stos technologiczny (Python/Flask, SQLite, prosty HTML), aby zapewniÄ‡ realizacjÄ™ projektu w wyznaczonym czasie.
+Rekomendacja dotyczÄ…ca skupienia siÄ™ na "master-prompcie": ZostaĹ‚a zaakceptowana jako kluczowy element projektu. Ustalono, ĹĽe stworzenie precyzyjnego i Ĺ‚atwo modyfikowalnego promptu bÄ™dzie priorytetem w celu zapewnienia jakoĹ›ci generowanych fiszek.
+Rekomendacja dotyczÄ…ca podziaĹ‚u pracy na bloki: ZostaĹ‚a zaakceptowana i staĹ‚a siÄ™ podstawÄ… planu dziaĹ‚ania. Praca zostanie podzielona na cztery logiczne etapy: szkielet aplikacji, implementacja Auth i CRUD, integracja z AI, a na koĹ„cu testy i CI/CD.
+Rekomendacja dotyczÄ…ca uproszczenia zakresu: Pierwotna rekomendacja o radykalnym uproszczeniu zostaĹ‚a odrzucona na rzecz planu, ktĂłry speĹ‚niaĹ‚by wymagania zaliczeniowe. Jednak jej duch zostaĹ‚ zachowany poprzez Ĺ›wiadome odĹ‚oĹĽenie na pĂłĹşniej wszystkich funkcji (jak system powtĂłrek), ktĂłre nie byĹ‚y absolutnie konieczne do zaliczenia.
+</matched_recommendations>
+<prd_planning_summary>
+Celem projektu jest stworzenie w ciÄ…gu 28 godzin aplikacji webowej do generowania fiszek dla dzieci, ktĂłra speĹ‚nia 5 kluczowych wymagaĹ„ zaliczeniowych. PoniĹĽsze podsumowanie stanowi podstawÄ™ do dalszych prac.
+a. GĹ‚Ăłwne wymagania funkcjonalne produktu:
+System Uwierzytelniania: UĹĽytkownicy muszÄ… mieÄ‡ moĹĽliwoĹ›Ä‡ rejestracji i logowania za pomocÄ… loginu i hasĹ‚a.
+Generator Fiszek AI: Aplikacja musi pozwalaÄ‡ zalogowanemu uĹĽytkownikowi na wklejenie tekstu, wybranie poĹĽÄ…danej iloĹ›ci fiszek ("maĹ‚o", "Ĺ›rednio", "duĹĽo") i otrzymanie zestawu wygenerowanego przez model Mistral.
+ZarzÄ…dzanie Zestawami Fiszek (PeĹ‚ny CRUD): UĹĽytkownik musi mieÄ‡ moĹĽliwoĹ›Ä‡ zapisania wygenerowanego zestawu na swoim koncie (Create), przeglÄ…dania listy swoich zestawĂłw i ich zawartoĹ›ci (Read), edycji pojedynczych fiszek w zestawie (Update) oraz usuwania caĹ‚ych zestawĂłw (Delete).
+b. Kluczowe historie uĹĽytkownika i Ĺ›cieĹĽki korzystania:
+Rejestracja i logowanie: "Jako nowy uĹĽytkownik, chcÄ™ zaĹ‚oĹĽyÄ‡ konto uĹĽywajÄ…c loginu i hasĹ‚a, aby mĂłc zapisywaÄ‡ swoje fiszki."
+Generowanie i zapisywanie: "Jako zalogowany uĹĽytkownik, chcÄ™ wkleiÄ‡ tekst z moich notatek, wygenerowaÄ‡ z niego fiszki i zapisaÄ‡ je na moim koncie, aby mĂłc do nich wrĂłciÄ‡ pĂłĹşniej."
+PrzeglÄ…danie i edycja: "Jako uĹĽytkownik, chcÄ™ przejrzeÄ‡ wygenerowane fiszki, poprawiÄ‡ te, ktĂłre zawierajÄ… bĹ‚Ä™dy lub sÄ… niejasne, aby mieÄ‡ pewnoĹ›Ä‡, ĹĽe uczÄ™ siÄ™ z poprawnych materiaĹ‚Ăłw."
+ZarzÄ…dzanie listÄ…: "Jako uĹĽytkownik, chcÄ™ widzieÄ‡ listÄ™ wszystkich moich zestawĂłw fiszek i mieÄ‡ moĹĽliwoĹ›Ä‡ ich usuniÄ™cia, gdy nie sÄ… mi juĹĽ potrzebne."
+c. WaĹĽne kryteria sukcesu i sposoby ich mierzenia:
+Kryterium GĹ‚Ăłwne (Zaliczeniowe): Dostarczenie w ciÄ…gu 28 godzin dziaĹ‚ajÄ…cej aplikacji, ktĂłra implementuje wszystkie 5 wymaganych komponentĂłw: uwierzytelnianie, logikÄ™ biznesowÄ… z LLM, peĹ‚ny CRUD, test jednostkowy oraz CI/CD. MiarÄ… sukcesu jest 100% zgodnoĹ›Ä‡ z tymi wymaganiami.
+Kryteria Produktowe (WtĂłrne dla MVP): Pierwotne cele (75% akceptacji fiszek AI, 75% fiszek tworzonych przez AI) pozostajÄ… w tle jako cele dla przyszĹ‚ego rozwoju produktu, ale nie sÄ… priorytetem dla tego konkretnego, ograniczonego czasowo zadania.
+</prd_planning_summary>
+<unresolved_issues>
+Finalna treĹ›Ä‡ "master-promptu": ChociaĹĽ zgodzono siÄ™ co do jego kluczowej roli, ostateczna, zoptymalizowana treĹ›Ä‡ promptu dla modelu Mistral bÄ™dzie musiaĹ‚a zostaÄ‡ stworzona i przetestowana w trakcie developmentu.
+DokĹ‚adny interfejs uĹĽytkownika: Ustalono, ĹĽe interfejs bÄ™dzie minimalistyczny (prosty HTML), ale dokĹ‚adny wyglÄ…d i przepĹ‚yw miÄ™dzy ekranami (zwĹ‚aszcza w procesie edycji fiszki i powrotu do listy) nie zostaĹ‚ wizualnie zaprojektowany.
+</unresolved_issues>
+</conversation_summary>
+
+
+================================================
+FILE: .ai/post-ai-generate-flashcards-implementation-plan.md
+================================================
+# API Endpoint Implementation Plan: POST /ai/generate-flashcards
+
+## 1. PrzeglÄ…d punktu koĹ„cowego
+
+Ten punkt koĹ„cowy umoĹĽliwia generowanie fiszek za pomocÄ… modelu AI (Ollama) na podstawie dostarczonego tekstu ĹşrĂłdĹ‚owego. Jest to chroniony punkt koĹ„cowy, wymagajÄ…cy uwierzytelnienia uĹĽytkownika.
+
+## 2. SzczegĂłĹ‚y ĹĽÄ…dania
+
+-   **Metoda HTTP**: `POST`
+-   **Struktura URL**: `/ai/generate-flashcards`
+-   **Parametry**: Brak parametrĂłw w URL.
+-   **Request Body**: 
+    -   **Content-Type**: `application/json`
+    -   **Pola**:
+        -   `text` (string, wymagane): Tekst ĹşrĂłdĹ‚owy do generowania fiszek.
+        -   `count` (integer, wymagane): Liczba fiszek do wygenerowania (5, 10 lub 15).
+    -   **Schemat**: `schemas.AIGenerationRequest`
+
+## 3. Wykorzystywane typy
+
+-   **Command Model**: `schemas.AIGenerationRequest` (dla danych wejĹ›ciowych ĹĽÄ…dania)
+-   **DTO (Data Transfer Object)**: `schemas.AIGenerationResponse` (dla danych wyjĹ›ciowych odpowiedzi)
+-   **DTO (nested)**: `schemas.FlashcardCreate` (dla pojedynczych fiszek w odpowiedzi)
+
+## 4. SzczegĂłĹ‚y odpowiedzi
+
+-   **OdpowiedĹş sukcesu (200 OK)**:
+    ```json
+    {
+      "flashcards": [
+        {
+          "question": "string",
+          "answer": "string"
+        }
+      ]
+    }
+    ```
+    -   **Schemat**: `schemas.AIGenerationResponse`
+-   **Odpowiedzi bĹ‚Ä™dĂłw**:
+    -   `401 Unauthorized`: JeĹ›li uĹĽytkownik nie jest uwierzytelniony.
+    -   `422 Unprocessable Entity`: JeĹ›li ciaĹ‚o ĹĽÄ…dania jest nieprawidĹ‚owe (np. puste pole `text`, `count` poza zakresem).
+    -   `500 Internal Server Error`: JeĹ›li komunikacja z usĹ‚ugÄ… Ollama zakoĹ„czy siÄ™ niepowodzeniem lub wystÄ…pi inny bĹ‚Ä…d po stronie serwera.
+
+## 5. PrzepĹ‚yw danych
+
+1.  Klient wysyĹ‚a ĹĽÄ…danie `POST` na adres `/ai/generate-flashcards` z tekstem ĹşrĂłdĹ‚owym i ĹĽÄ…danÄ… liczbÄ… fiszek.
+2.  Router FastAPI przechwytuje ĹĽÄ…danie.
+3.  Punkt koĹ„cowy wymaga uwierzytelnienia uĹĽytkownika (np. za pomocÄ… `Depends(oauth2_scheme)` i `Depends(get_current_user)`).
+4.  Dane wejĹ›ciowe sÄ… walidowane przez `schemas.AIGenerationRequest`.
+5.  Punkt koĹ„cowy wywoĹ‚uje funkcjÄ™ serwisowÄ… (np. `ollama_service.generate_flashcards`), przekazujÄ…c tekst i liczbÄ™ fiszek.
+6.  Funkcja serwisowa komunikuje siÄ™ z lokalnym modelem Ollama (np. Mistral) za pomocÄ… biblioteki `httpx`.
+7.  Ĺ»Ä…danie do Ollamy zawiera instrukcje dotyczÄ…ce formatu odpowiedzi (np. JSON z listÄ… obiektĂłw `question`/`answer`).
+8.  OdpowiedĹş z Ollamy jest parsowana i walidowana.
+9.  JeĹ›li generowanie powiedzie siÄ™, funkcja serwisowa zwraca listÄ™ obiektĂłw `schemas.FlashcardCreate`.
+10. JeĹ›li komunikacja z OllamÄ… zakoĹ„czy siÄ™ bĹ‚Ä™dem lub zwrĂłci nieprawidĹ‚owy format, funkcja serwisowa zgĹ‚asza odpowiedni wyjÄ…tek.
+11. Punkt koĹ„cowy zwraca odpowiedĹş `200 OK` z wygenerowanymi fiszkami, sformatowanymi zgodnie ze schematem `schemas.AIGenerationResponse`.
+
+## 6. WzglÄ™dy bezpieczeĹ„stwa
+
+-   **Uwierzytelnienie**: Punkt koĹ„cowy jest chroniony i dostÄ™pny tylko dla uwierzytelnionych uĹĽytkownikĂłw.
+-   **Walidacja danych wejĹ›ciowych**: Pydantic waliduje `text` i `count`, zapobiegajÄ…c nieprawidĹ‚owym danym.
+-   **Ograniczenie rozmiaru tekstu**: NaleĹĽy rozwaĹĽyÄ‡ ograniczenie maksymalnego rozmiaru `text`, aby zapobiec atakom DoS i nadmiernemu zuĹĽyciu zasobĂłw AI.
+-   **Sanityzacja danych AI**: ChociaĹĽ model AI powinien zwracaÄ‡ czysty tekst, zawsze naleĹĽy rozwaĹĽyÄ‡, czy odpowiedĹş AI nie zawiera zĹ‚oĹ›liwego kodu lub treĹ›ci, jeĹ›li miaĹ‚aby byÄ‡ renderowana bezpoĹ›rednio na frontendzie. W tym przypadku, poniewaĹĽ jest to tylko tekst, ryzyko jest mniejsze.
+-   **HTTPS**: Komunikacja z API powinna odbywaÄ‡ siÄ™ przez HTTPS.
+
+## 7. ObsĹ‚uga bĹ‚Ä™dĂłw
+
+-   `401 Unauthorized`: JeĹ›li uĹĽytkownik nie jest uwierzytelniony.
+-   `422 Unprocessable Entity`: JeĹ›li `text` jest pusty lub `count` jest poza zakresem (np. nie 5, 10, 15).
+-   `500 Internal Server Error`: 
+    -   BĹ‚Ä™dy komunikacji z usĹ‚ugÄ… Ollama (np. usĹ‚uga niedostÄ™pna, timeout).
+    -   BĹ‚Ä™dy parsowania odpowiedzi z Ollamy.
+    -   Inne nieoczekiwane bĹ‚Ä™dy serwera.
+
+## 8. RozwaĹĽania dotyczÄ…ce wydajnoĹ›ci
+
+-   **Czas odpowiedzi AI**: Generowanie fiszek przez model AI moĹĽe byÄ‡ czasochĹ‚onne. NaleĹĽy monitorowaÄ‡ czasy odpowiedzi Ollamy.
+-   **AsynchronicznoĹ›Ä‡**: UĹĽycie `httpx` w trybie asynchronicznym jest kluczowe, aby nie blokowaÄ‡ gĹ‚Ăłwnego wÄ…tku FastAPI podczas oczekiwania na odpowiedĹş z Ollamy.
+-   **Limitowanie zapytaĹ„**: NaleĹĽy rozwaĹĽyÄ‡ ograniczenie liczby zapytaĹ„ do AI na uĹĽytkownika/IP, aby zapobiec naduĹĽyciom i przeciÄ…ĹĽeniu serwera Ollama.
+
+## 9. Etapy wdroĹĽenia
+
+1.  **Serwis Ollama**: UtwĂłrz nowy plik `app/services/ollama_service.py`.
+    -   Zaimplementuj funkcjÄ™ `generate_flashcards(text: str, count: int) -> List[schemas.FlashcardCreate]`.
+    -   UĹĽyj `httpx.AsyncClient` do wysyĹ‚ania ĹĽÄ…daĹ„ `POST` do endpointu Ollamy.
+    -   Sformatuj prompt dla Ollamy, aby uzyskaÄ‡ odpowiedĹş w JSON z fiszkami.
+    -   ObsĹ‚uĹĽ bĹ‚Ä™dy komunikacji i parsowania odpowiedzi.
+2.  **Router AI**: W pliku `app/routers/flashcards.py` (lub nowym `app/routers/ai.py`):
+    -   Zaimplementuj punkt koĹ„cowy `POST /ai/generate-flashcards`.
+    -   UĹĽyj `schemas.AIGenerationRequest` jako typu dla ciaĹ‚a ĹĽÄ…dania.
+    -   Wstrzyknij zaleĹĽnoĹ›ci uwierzytelnienia (np. `current_user: models.User = Depends(get_current_user)`).
+    -   WywoĹ‚aj `ollama_service.generate_flashcards`.
+    -   ObsĹ‚uĹĽ potencjalne `HTTPException` z serwisu Ollama.
+    -   ZwrĂłÄ‡ odpowiedĹş w formacie `schemas.AIGenerationResponse`.
+3.  **Integracja**: Upewnij siÄ™, ĹĽe router jest doĹ‚Ä…czony do gĹ‚Ăłwnej instancji aplikacji FastAPI w `app/main.py`.
+
+
+================================================
+FILE: .ai/post-flashcard-sets-implementation-plan.md
+================================================
+# API Endpoint Implementation Plan: POST /flashcard-sets
+
+## 1. PrzeglÄ…d punktu koĹ„cowego
+
+Ten punkt koĹ„cowy umoĹĽliwia tworzenie nowego zestawu fiszek dla uwierzytelnionego uĹĽytkownika. Zestaw moĹĽe zawieraÄ‡ listÄ™ fiszek, ktĂłre zostanÄ… do niego przypisane.
+
+## 2. SzczegĂłĹ‚y ĹĽÄ…dania
+
+-   **Metoda HTTP**: `POST`
+-   **Struktura URL**: `/flashcard-sets`
+-   **Parametry**: Brak parametrĂłw w URL.
+-   **Request Body**: 
+    -   **Content-Type**: `application/json`
+    -   **Pola**:
+        -   `name` (string, wymagane): Nazwa nowego zestawu fiszek.
+        -   `flashcards` (array of objects, wymagane): Lista obiektĂłw fiszek do dodania do zestawu. KaĹĽdy obiekt powinien zawieraÄ‡ `question` i `answer`.
+    -   **Schemat**: `schemas.FlashcardSetCreate`
+
+## 3. Wykorzystywane typy
+
+-   **Command Model**: `schemas.FlashcardSetCreate` (dla danych wejĹ›ciowych ĹĽÄ…dania)
+-   **DTO (Data Transfer Object)**: `schemas.FlashcardSetDetail` (dla danych wyjĹ›ciowych odpowiedzi, zawiera zagnieĹĽdĹĽone fiszki)
+-   **Model Bazy Danych**: `models.FlashcardSet`, `models.Flashcard` (dla interakcji z bazÄ… danych)
+
+## 4. SzczegĂłĹ‚y odpowiedzi
+
+-   **OdpowiedĹş sukcesu (201 Created)**:
+    ```json
+    {
+      "id": 1,
+      "user_id": 1,
+      "name": "string",
+      "created_at": "2025-08-04T10:00:00Z",
+      "flashcards": [
+        {
+          "id": 1,
+          "question": "string",
+          "answer": "string"
+        }
+      ]
+    }
+    ```
+    -   **Schemat**: `schemas.FlashcardSetDetail`
+-   **Odpowiedzi bĹ‚Ä™dĂłw**:
+    -   `400 Bad Request`: JeĹ›li zestaw o tej samej nazwie juĹĽ istnieje dla danego uĹĽytkownika.
+    -   `401 Unauthorized`: JeĹ›li uĹĽytkownik nie jest uwierzytelniony.
+    -   `422 Unprocessable Entity`: JeĹ›li ciaĹ‚o ĹĽÄ…dania jest nieprawidĹ‚owe (np. pusta nazwa, nieprawidĹ‚owa struktura fiszek).
+    -   `500 Internal Server Error`: W przypadku nieoczekiwanego bĹ‚Ä™du serwera.
+
+## 5. PrzepĹ‚yw danych
+
+1.  Klient wysyĹ‚a ĹĽÄ…danie `POST` na adres `/flashcard-sets` z nazwÄ… zestawu i listÄ… fiszek w formacie JSON.
+2.  Router FastAPI przechwytuje ĹĽÄ…danie.
+3.  Punkt koĹ„cowy wymaga uwierzytelnienia uĹĽytkownika i pobiera `current_user`.
+4.  Dane wejĹ›ciowe sÄ… walidowane przez `schemas.FlashcardSetCreate`.
+5.  Punkt koĹ„cowy wywoĹ‚uje funkcjÄ™ serwisowÄ… (np. `crud.create_flashcard_set`), przekazujÄ…c `schemas.FlashcardSetCreate`, `user_id` i instancjÄ™ sesji bazy danych.
+6.  Funkcja serwisowa najpierw sprawdza, czy zestaw o podanej nazwie juĹĽ istnieje dla danego `user_id`.
+7.  JeĹ›li zestaw istnieje, funkcja serwisowa zgĹ‚asza bĹ‚Ä…d (np. `IntegrityError` lub niestandardowy wyjÄ…tek).
+8.  JeĹ›li zestaw nie istnieje, tworzony jest nowy obiekt `models.FlashcardSet`.
+9.  Dla kaĹĽdej fiszki w `schemas.FlashcardSetCreate.flashcards`, tworzony jest nowy obiekt `models.Flashcard` i przypisywany do nowo utworzonego zestawu.
+10. Nowy zestaw i jego fiszki sÄ… dodawane do sesji bazy danych i zatwierdzane.
+11. Funkcja serwisowa zwraca utworzony obiekt `models.FlashcardSet` (z zaĹ‚adowanymi relacjami do fiszek).
+12. Punkt koĹ„cowy zwraca odpowiedĹş `201 Created` z utworzonym zestawem fiszek, sformatowanym zgodnie ze schematem `schemas.FlashcardSetDetail`.
+
+## 6. WzglÄ™dy bezpieczeĹ„stwa
+
+-   **Uwierzytelnienie**: Punkt koĹ„cowy jest chroniony i dostÄ™pny tylko dla uwierzytelnionych uĹĽytkownikĂłw.
+-   **Autoryzacja**: Zestawy fiszek sÄ… zawsze tworzone w kontekĹ›cie uwierzytelnionego uĹĽytkownika (`user_id` z tokena), co zapobiega tworzeniu zestawĂłw dla innych uĹĽytkownikĂłw.
+-   **Walidacja danych wejĹ›ciowych**: Pydantic waliduje nazwÄ™ zestawu i strukturÄ™ fiszek, zapobiegajÄ…c nieprawidĹ‚owym danym.
+-   **UnikalnoĹ›Ä‡ nazwy zestawu**: Baza danych wymusza unikalnoĹ›Ä‡ nazwy zestawu dla danego uĹĽytkownika.
+
+## 7. ObsĹ‚uga bĹ‚Ä™dĂłw
+
+-   `401 Unauthorized`: JeĹ›li uĹĽytkownik nie jest uwierzytelniony.
+-   `400 Bad Request`: JeĹ›li zestaw o tej samej nazwie juĹĽ istnieje dla danego uĹĽytkownika (wynik `IntegrityError`).
+-   `422 Unprocessable Entity`: JeĹ›li ciaĹ‚o ĹĽÄ…dania jest nieprawidĹ‚owe (np. pusta nazwa, pusta lista fiszek, nieprawidĹ‚owa struktura fiszki).
+-   `500 Internal Server Error`: W przypadku nieoczekiwanego bĹ‚Ä™du serwera.
+
+## 8. RozwaĹĽania dotyczÄ…ce wydajnoĹ›ci
+
+-   **Operacje na bazie danych**: Tworzenie wielu fiszek w jednej transakcji jest wydajne. NaleĹĽy jednak uwaĹĽaÄ‡ na bardzo duĹĽe zestawy fiszek, ktĂłre mogÄ… spowolniÄ‡ operacjÄ™.
+-   **Indeksy**: Indeksy na `user_id` w `flashcard_sets` i `set_id` w `flashcards` zapewniajÄ… szybkie operacje wyszukiwania i tworzenia relacji.
+
+## 9. Etapy wdroĹĽenia
+
+1.  **CRUD Operations**: W pliku `app/crud/crud.py` zaimplementuj funkcjÄ™ `create_flashcard_set(db: Session, set_data: schemas.FlashcardSetCreate, user_id: int) -> models.FlashcardSet`.
+    -   Funkcja ta powinna przyjmowaÄ‡ `set_data` i `user_id`.
+    -   SprawdĹş unikalnoĹ›Ä‡ nazwy zestawu dla danego uĹĽytkownika.
+    -   UtwĂłrz `models.FlashcardSet`.
+    -   Iteruj po `set_data.flashcards` i utwĂłrz `models.Flashcard` dla kaĹĽdej z nich, przypisujÄ…c `set_id`.
+    -   Dodaj wszystkie obiekty do sesji i zatwierdĹş.
+    -   ZwrĂłÄ‡ utworzony zestaw (z zaĹ‚adowanymi fiszkami).
+2.  **Router**: W pliku `app/routers/flashcards.py`:
+    -   Zaimplementuj punkt koĹ„cowy `POST /flashcard-sets`.
+    -   UĹĽyj `schemas.FlashcardSetCreate` jako typu dla ciaĹ‚a ĹĽÄ…dania.
+    -   Wstrzyknij zaleĹĽnoĹ›ci: `db: Session = Depends(get_db)` i `current_user: models.User = Depends(get_current_user)`.
+    -   WywoĹ‚aj `crud.create_flashcard_set`, przekazujÄ…c `set_data` i `current_user.id`.
+    -   ObsĹ‚uĹĽ `IntegrityError` dla duplikatu nazwy zestawu, zwracajÄ…c `HTTPException` 400.
+    -   ZwrĂłÄ‡ utworzony zestaw w formacie `schemas.FlashcardSetDetail` ze statusem `201 Created`.
+3.  **Integracja**: Upewnij siÄ™, ĹĽe router jest doĹ‚Ä…czony do gĹ‚Ăłwnej instancji aplikacji FastAPI w `app/main.py`.
+
+
+================================================
+FILE: .ai/post-token-implementation-plan.md
+================================================
+# API Endpoint Implementation Plan: POST /token
+
+## 1. PrzeglÄ…d punktu koĹ„cowego
+
+Celem tego punktu koĹ„cowego jest uwierzytelnienie uĹĽytkownika na podstawie jego nazwy uĹĽytkownika i hasĹ‚a. Po pomyĹ›lnej weryfikacji, punkt koĹ„cowy generuje i zwraca token dostÄ™powy JWT (JSON Web Token), ktĂłry moĹĽe byÄ‡ uĹĽywany do autoryzacji w chronionych zasobach API.
+
+## 2. SzczegĂłĹ‚y ĹĽÄ…dania
+
+-   **Metoda HTTP**: `POST`
+-   **Struktura URL**: `/token`
+-   **Parametry**: Brak parametrĂłw w URL.
+-   **Request Body**: 
+    -   **Content-Type**: `application/x-www-form-urlencoded`
+    -   **Pola**:
+        -   `username` (string, wymagane): Nazwa uĹĽytkownika.
+        -   `password` (string, wymagane): HasĹ‚o uĹĽytkownika.
+
+## 3. Wykorzystywane typy
+
+-   **FastAPI Dependency**: `OAuth2PasswordRequestForm` zostanie uĹĽyty do przechwycenia i walidacji danych formularza `username` i `password`.
+-   **DTOs (Data Transfer Objects)**:
+    -   `schemas.Token`: UĹĽywany do strukturyzowania odpowiedzi zawierajÄ…cej token dostÄ™powy.
+    -   `schemas.TokenData`: UĹĽywany do definiowania danych, ktĂłre zostanÄ… zakodowane wewnÄ…trz tokena JWT.
+-   **Modele Bazy Danych**:
+    -   `models.User`: UĹĽywany do pobrania danych uĹĽytkownika z bazy danych w celu weryfikacji.
+
+## 4. SzczegĂłĹ‚y odpowiedzi
+
+-   **OdpowiedĹş sukcesu (200 OK)**:
+    ```json
+    {
+      "access_token": "string",
+      "token_type": "bearer"
+    }
+    ```
+-   **Odpowiedzi bĹ‚Ä™dĂłw**:
+    -   `400 Bad Request`: Zwracany, gdy podane poĹ›wiadczenia (nazwa uĹĽytkownika lub hasĹ‚o) sÄ… nieprawidĹ‚owe.
+    -   `422 Unprocessable Entity`: Zwracany automatycznie przez FastAPI, jeĹ›li ciaĹ‚o ĹĽÄ…dania nie jest poprawnie sformatowane (np. brakuje pĂłl).
+
+## 5. PrzepĹ‚yw danych
+
+1.  Klient wysyĹ‚a ĹĽÄ…danie `POST` na adres `/token` z danymi `username` i `password` w formacie `application/x-www-form-urlencoded`.
+2.  Router FastAPI przechwytuje ĹĽÄ…danie.
+3.  ZaleĹĽnoĹ›Ä‡ `OAuth2PasswordRequestForm` jest wstrzykiwana do funkcji endpointu, walidujÄ…c obecnoĹ›Ä‡ wymaganych pĂłl.
+4.  Punkt koĹ„cowy wywoĹ‚uje funkcjÄ™ serwisowÄ… (np. `auth_service.authenticate_user`), przekazujÄ…c nazwÄ™ uĹĽytkownika i hasĹ‚o.
+5.  Funkcja serwisowa pobiera uĹĽytkownika z bazy danych na podstawie nazwy uĹĽytkownika przy uĹĽyciu SQLAlchemy.
+6.  JeĹ›li uĹĽytkownik nie zostanie znaleziony, funkcja zwraca `False`.
+7.  JeĹ›li uĹĽytkownik zostanie znaleziony, funkcja uĹĽywa biblioteki `passlib` do bezpiecznego porĂłwnania dostarczonego hasĹ‚a z hashem przechowywanym w bazie danych (`password_hash`).
+8.  JeĹ›li hasĹ‚a nie pasujÄ…, funkcja zwraca `False`. W przeciwnym razie zwraca obiekt `User`.
+9.  JeĹ›li uwierzytelnienie w punkcie koĹ„cowym nie powiedzie siÄ™, zgĹ‚aszany jest `HTTPException` ze statusem `400`.
+10. JeĹ›li uwierzytelnienie siÄ™ powiedzie, wywoĹ‚ywana jest kolejna funkcja serwisowa (np. `auth_service.create_access_token`) w celu wygenerowania tokena JWT.
+11. Punkt koĹ„cowy zwraca odpowiedĹş `200 OK` z tokenem sformatowanym zgodnie ze schematem `schemas.Token`.
+
+## 6. WzglÄ™dy bezpieczeĹ„stwa
+
+-   **Haszowanie haseĹ‚**: HasĹ‚a muszÄ… byÄ‡ haszowane przy uĹĽyciu silnego, adaptacyjnego algorytmu, takiego jak **Bcrypt**. Biblioteka `passlib` zostanie uĹĽyta do obsĹ‚ugi haszowania i weryfikacji.
+-   **BezpieczeĹ„stwo JWT**: 
+    -   Klucz tajny (`SECRET_KEY`) uĹĽywany do podpisywania tokenĂłw musi byÄ‡ silny, losowy i przechowywany jako zmienna Ĺ›rodowiskowa, a nie zakodowany na staĹ‚e w kodzie.
+    -   Tokeny powinny mieÄ‡ krĂłtki czas wygaĹ›niÄ™cia (np. 15-60 minut), aby zminimalizowaÄ‡ ryzyko ich przejÄ™cia.
+-   **Ochrona przed atakami Brute-Force**: NaleĹĽy zaimplementowaÄ‡ ograniczanie liczby ĹĽÄ…daĹ„ (rate limiting) na tym punkcie koĹ„cowym, aby spowolniÄ‡ prĂłby odgadniÄ™cia haseĹ‚. MoĹĽna do tego uĹĽyÄ‡ biblioteki `slowapi`.
+-   **Transport**: CaĹ‚a komunikacja musi odbywaÄ‡ siÄ™ przez HTTPS, aby chroniÄ‡ dane uwierzytelniajÄ…ce i tokeny w tranzycie.
+
+## 7. ObsĹ‚uga bĹ‚Ä™dĂłw
+
+-   **NieprawidĹ‚owe poĹ›wiadczenia**: JeĹ›li `authenticate_user` zwrĂłci `False`, punkt koĹ„cowy musi zwrĂłciÄ‡ `HTTPException(status_code=400, detail="Incorrect username or password")`.
+-   **BĹ‚Ä™dy wewnÄ™trzne**: Wszelkie nieoczekiwane bĹ‚Ä™dy podczas interakcji z bazÄ… danych lub generowania tokena powinny byÄ‡ przechwytywane i logowane, a do klienta powinna byÄ‡ zwracana ogĂłlna odpowiedĹş `500 Internal Server Error`.
+
+## 8. RozwaĹĽania dotyczÄ…ce wydajnoĹ›ci
+
+-   **Zapytanie do bazy danych**: Zapytanie o uĹĽytkownika po nazwie uĹĽytkownika powinno byÄ‡ szybkie. NaleĹĽy upewniÄ‡ siÄ™, ĹĽe kolumna `users.username` ma zaĹ‚oĹĽony indeks (zgodnie z `db-plan.md`).
+-   **Haszowanie haseĹ‚**: Operacje haszowania (szczegĂłlnie weryfikacja) sÄ… celowo intensywne obliczeniowo, aby zapobiegaÄ‡ atakom. Jest to oczekiwane i akceptowalne zachowanie dla tego punktu koĹ„cowego.
+
+## 9. Etapy wdroĹĽenia
+
+1.  **ZaleĹĽnoĹ›ci**: Dodaj `passlib[bcrypt]` i `python-jose[cryptography]` do pliku `requirements.txt`.
+2.  **Konfiguracja**: Zdefiniuj `SECRET_KEY`, `ALGORITHM` i `ACCESS_TOKEN_EXPIRE_MINUTES` w module konfiguracyjnym, Ĺ‚adujÄ…c wartoĹ›ci ze zmiennych Ĺ›rodowiskowych.
+3.  **Serwis uwierzytelniania**: UtwĂłrz nowy plik `app/services/auth_service.py`.
+    -   Zaimplementuj funkcjÄ™ `verify_password(plain_password, hashed_password)` uĹĽywajÄ…c `passlib`.
+    -   Zaimplementuj funkcjÄ™ `get_password_hash(password)` uĹĽywajÄ…c `passlib`.
+    -   Zaimplementuj funkcjÄ™ `authenticate_user(db: Session, username: str, password: str) -> models.User | bool`, ktĂłra pobiera uĹĽytkownika i weryfikuje hasĹ‚o.
+    -   Zaimplementuj funkcjÄ™ `create_access_token(data: dict, expires_delta: timedelta | None = None)` uĹĽywajÄ…c `jose.jwt`.
+4.  **Router**: W pliku `app/routers/auth.py`:
+    -   Zdefiniuj `OAuth2PasswordBearer`.
+    -   StwĂłrz router FastAPI (`APIRouter`).
+    -   Zaimplementuj punkt koĹ„cowy `POST /token`.
+    -   UĹĽyj `Annotated[OAuth2PasswordRequestForm, Depends()]` do wstrzykniÄ™cia danych formularza.
+    -   WywoĹ‚aj `auth_service.authenticate_user` w celu weryfikacji poĹ›wiadczeĹ„.
+    -   W przypadku niepowodzenia, zgĹ‚oĹ› `HTTPException` ze statusem 400.
+    -   W przypadku powodzenia, wywoĹ‚aj `auth_service.create_access_token` w celu stworzenia tokena.
+    -   ZwrĂłÄ‡ odpowiedĹş w formacie `schemas.Token`.
+5.  **Integracja**: W gĹ‚Ăłwnym pliku aplikacji (`app/main.py`), doĹ‚Ä…cz nowo utworzony router do gĹ‚Ăłwnej instancji aplikacji FastAPI.
+
+
+================================================
+FILE: .ai/post-users-implementation-plan.md
+================================================
+# API Endpoint Implementation Plan: POST /users
+
+## 1. PrzeglÄ…d punktu koĹ„cowego
+
+Celem tego punktu koĹ„cowego jest umoĹĽliwienie rejestracji nowych uĹĽytkownikĂłw w systemie. Przyjmuje nazwÄ™ uĹĽytkownika i hasĹ‚o, haszuje hasĹ‚o i zapisuje nowego uĹĽytkownika w bazie danych.
+
+## 2. SzczegĂłĹ‚y ĹĽÄ…dania
+
+-   **Metoda HTTP**: `POST`
+-   **Struktura URL**: `/users`
+-   **Parametry**: Brak parametrĂłw w URL.
+-   **Request Body**: 
+    -   **Content-Type**: `application/json`
+    -   **Pola**:
+        -   `username` (string, wymagane): Unikalna nazwa uĹĽytkownika.
+        -   `password` (string, wymagane): HasĹ‚o uĹĽytkownika.
+    -   **Schemat**: `schemas.UserCreate`
+
+## 3. Wykorzystywane typy
+
+-   **Command Model**: `schemas.UserCreate` (dla danych wejĹ›ciowych ĹĽÄ…dania)
+-   **DTO (Data Transfer Object)**: `schemas.User` (dla danych wyjĹ›ciowych odpowiedzi)
+-   **Model Bazy Danych**: `models.User` (dla interakcji z bazÄ… danych)
+
+## 4. SzczegĂłĹ‚y odpowiedzi
+
+-   **OdpowiedĹş sukcesu (201 Created)**:
+    ```json
+    {
+      "id": 1,
+      "username": "string",
+      "created_at": "2025-08-04T10:00:00Z",
+      "updated_at": "2025-08-04T10:00:00Z"
+    }
+    ```
+    -   **Schemat**: `schemas.User`
+-   **Odpowiedzi bĹ‚Ä™dĂłw**:
+    -   `400 Bad Request`: Zwracany, gdy nazwa uĹĽytkownika juĹĽ istnieje.
+    -   `422 Unprocessable Entity`: Zwracany automatycznie przez FastAPI, jeĹ›li ciaĹ‚o ĹĽÄ…dania nie jest zgodne ze schematem `schemas.UserCreate` (np. brakuje pĂłl, nieprawidĹ‚owy typ danych).
+    -   `500 Internal Server Error`: W przypadku nieoczekiwanego bĹ‚Ä™du serwera.
+
+## 5. PrzepĹ‚yw danych
+
+1.  Klient wysyĹ‚a ĹĽÄ…danie `POST` na adres `/users` z danymi `username` i `password` w formacie JSON.
+2.  Router FastAPI przechwytuje ĹĽÄ…danie i automatycznie waliduje ciaĹ‚o ĹĽÄ…dania za pomocÄ… `schemas.UserCreate`.
+3.  Punkt koĹ„cowy wywoĹ‚uje funkcjÄ™ serwisowÄ… (np. `crud.create_user`), przekazujÄ…c obiekt `schemas.UserCreate` i instancjÄ™ sesji bazy danych.
+4.  Funkcja serwisowa najpierw sprawdza, czy uĹĽytkownik o podanej nazwie uĹĽytkownika juĹĽ istnieje w bazie danych.
+5.  JeĹ›li uĹĽytkownik istnieje, funkcja serwisowa zgĹ‚asza bĹ‚Ä…d (np. `IntegrityError` lub niestandardowy wyjÄ…tek), ktĂłry zostanie przechwycony w punkcie koĹ„cowym.
+6.  JeĹ›li uĹĽytkownik nie istnieje, hasĹ‚o jest haszowane przy uĹĽyciu `auth_service.get_password_hash`.
+7.  Tworzony jest nowy obiekt `models.User` z haszowanym hasĹ‚em i pozostaĹ‚ymi danymi.
+8.  Nowy obiekt uĹĽytkownika jest dodawany do sesji bazy danych i zatwierdzany.
+9.  Funkcja serwisowa zwraca utworzony obiekt `models.User`.
+10. Punkt koĹ„cowy zwraca odpowiedĹş `201 Created` z utworzonym obiektem uĹĽytkownika, sformatowanym zgodnie ze schematem `schemas.User`.
+
+## 6. WzglÄ™dy bezpieczeĹ„stwa
+
+-   **Haszowanie haseĹ‚**: HasĹ‚a sÄ… haszowane przy uĹĽyciu silnego algorytmu (Bcrypt) przed zapisaniem w bazie danych. Nigdy nie sÄ… przechowywane w postaci jawnego tekstu.
+-   **UnikalnoĹ›Ä‡ nazwy uĹĽytkownika**: Baza danych wymusza unikalnoĹ›Ä‡ nazw uĹĽytkownikĂłw, zapobiegajÄ…c duplikatom.
+-   **Walidacja danych wejĹ›ciowych**: Pydantic automatycznie waliduje dane wejĹ›ciowe, zapobiegajÄ…c wstrzykiwaniu nieprawidĹ‚owych lub zĹ‚oĹ›liwych danych.
+-   **HTTPS**: CaĹ‚a komunikacja powinna odbywaÄ‡ siÄ™ przez HTTPS, aby chroniÄ‡ dane uwierzytelniajÄ…ce w tranzycie.
+
+## 7. ObsĹ‚uga bĹ‚Ä™dĂłw
+
+-   **Nazwa uĹĽytkownika juĹĽ istnieje**: JeĹ›li prĂłba utworzenia uĹĽytkownika zakoĹ„czy siÄ™ bĹ‚Ä™dem unikalnoĹ›ci (np. `IntegrityError` z SQLAlchemy), punkt koĹ„cowy powinien przechwyciÄ‡ ten bĹ‚Ä…d i zwrĂłciÄ‡ `HTTPException(status_code=400, detail="Username already registered")`.
+-   **NieprawidĹ‚owe dane wejĹ›ciowe**: FastAPI automatycznie obsĹ‚uguje bĹ‚Ä™dy walidacji Pydantic, zwracajÄ…c `422 Unprocessable Entity` ze szczegĂłĹ‚ami bĹ‚Ä™du.
+-   **BĹ‚Ä™dy wewnÄ™trzne**: Wszelkie inne nieoczekiwane bĹ‚Ä™dy podczas interakcji z bazÄ… danych powinny byÄ‡ przechwytywane, logowane i zwracana powinna byÄ‡ ogĂłlna odpowiedĹş `500 Internal Server Error`.
+
+## 8. RozwaĹĽania dotyczÄ…ce wydajnoĹ›ci
+
+-   **Zapytanie o unikalnoĹ›Ä‡**: Sprawdzenie unikalnoĹ›ci nazwy uĹĽytkownika jest szybkie dziÄ™ki indeksowi na kolumnie `username` w tabeli `users`.
+-   **Haszowanie hasĹ‚a**: Operacja haszowania hasĹ‚a jest celowo intensywna obliczeniowo, ale jest to jednorazowa operacja podczas rejestracji i nie powinna stanowiÄ‡ wÄ…skiego gardĹ‚a.
+
+## 9. Etapy wdroĹĽenia
+
+1.  **CRUD Operations**: W pliku `app/crud/crud.py` (lub dedykowanym serwisie dla uĹĽytkownikĂłw) zaimplementuj funkcjÄ™ `create_user(db: Session, user: schemas.UserCreate) -> models.User`.
+    -   Funkcja ta powinna przyjmowaÄ‡ obiekt `schemas.UserCreate`.
+    -   SprawdĹş, czy uĹĽytkownik o danej nazwie juĹĽ istnieje.
+    -   WywoĹ‚aj `auth_service.get_password_hash` do haszowania hasĹ‚a.
+    -   UtwĂłrz instancjÄ™ `models.User` i dodaj jÄ… do sesji bazy danych.
+2.  **Router**: W pliku `app/routers/auth.py` (lub nowym `app/routers/users.py`):
+    -   Zaimplementuj punkt koĹ„cowy `POST /users`.
+    -   UĹĽyj `schemas.UserCreate` jako typu dla ciaĹ‚a ĹĽÄ…dania.
+    -   Wstrzyknij sesjÄ™ bazy danych (`db: Session = Depends(get_db)`).
+    -   WywoĹ‚aj funkcjÄ™ `create_user` z serwisu/CRUD.
+    -   ObsĹ‚uĹĽ `IntegrityError` (lub niestandardowy wyjÄ…tek) dla duplikatu nazwy uĹĽytkownika, zwracajÄ…c `HTTPException` 400.
+    -   ZwrĂłÄ‡ utworzonego uĹĽytkownika w formacie `schemas.User` ze statusem `201 Created`.
+3.  **Integracja**: Upewnij siÄ™, ĹĽe router jest doĹ‚Ä…czony do gĹ‚Ăłwnej instancji aplikacji FastAPI w `app/main.py`.
+
+
+================================================
+FILE: .ai/prd.md
+================================================
+# Dokument wymagaĹ„ produktu (PRD) - Generator Fiszek AI
+
+## 1. PrzeglÄ…d produktu
+Celem projektu jest stworzenie aplikacji webowej (MVP), ktĂłra rozwiÄ…zuje problem czasochĹ‚onnego tworzenia fiszek edukacyjnych. Aplikacja jest skierowana do dzieci ze szkoĹ‚y podstawowej i umoĹĽliwia im automatyczne generowanie fiszek na podstawie dostarczonych przez nie materiaĹ‚Ăłw (np. notatek z lekcji). UĹĽytkownicy mogÄ… zarzÄ…dzaÄ‡ swoimi zestawami fiszek, edytowaÄ‡ je i przygotowywaÄ‡ do nauki.
+
+## 2. Problem uĹĽytkownika
+Manualne tworzenie wysokiej jakoĹ›ci fiszek jest procesem powolnym i ĹĽmudnym. Uczniowie, zwĹ‚aszcza mĹ‚odsi, czÄ™sto rezygnujÄ… z tej efektywnej metody nauki z powodu wysiĹ‚ku wymaganego do przygotowania materiaĹ‚Ăłw. Brak Ĺ‚atwego i szybkiego sposobu na przeksztaĹ‚canie wĹ‚asnych materiaĹ‚Ăłw (takich jak notatki z lekcji, fragmenty podrÄ™cznikĂłw czy artykuĹ‚y) w zestawy fiszek stanowi barierÄ™ w regularnym stosowaniu metody powtĂłrek interwaĹ‚owych (spaced repetition).
+
+## 3. Wymagania funkcjonalne
+### 3.1. Uwierzytelnianie uĹĽytkownika
+- UĹĽytkownicy muszÄ… mieÄ‡ moĹĽliwoĹ›Ä‡ zaĹ‚oĹĽenia konta za pomocÄ… nazwy uĹĽytkownika i hasĹ‚a.
+- UĹĽytkownicy muszÄ… mieÄ‡ moĹĽliwoĹ›Ä‡ zalogowania siÄ™ na istniejÄ…ce konto.
+- System musi zapewniaÄ‡, ĹĽe tylko zalogowani uĹĽytkownicy majÄ… dostÄ™p do swoich zestawĂłw fiszek.
+
+### 3.2. Generowanie fiszek przez AI
+- Aplikacja musi udostÄ™pniaÄ‡ pole tekstowe do wklejania treĹ›ci ĹşrĂłdĹ‚owej (np. notatek z lekcji), na podstawie ktĂłrej AI wygeneruje fiszki.
+- UĹĽytkownik musi mieÄ‡ moĹĽliwoĹ›Ä‡ wyboru jednej z trzech opcji okreĹ›lajÄ…cych liczbÄ™ generowanych fiszek: "maĹ‚o" (5), "Ĺ›rednio" (10), "duĹĽo" (15).
+- Backend musi komunikowaÄ‡ siÄ™ z API modelu jÄ™zykowego uruchomionego na Ollama (np. Mistral) w celu przetworzenia tekstu.
+- Wynik generowania (zestaw par pytanie-odpowiedĹş) musi byÄ‡ wyĹ›wietlony uĹĽytkownikowi w czytelny sposĂłb.
+
+### 3.3. ZarzÄ…dzanie fiszkami i zestawami (CRUD)
+- UĹĽytkownicy muszÄ… mieÄ‡ moĹĽliwoĹ›Ä‡ zapisania wygenerowanego zestawu fiszek na swoim koncie.
+- UĹĽytkownicy muszÄ… mieÄ‡ moĹĽliwoĹ›Ä‡ przeglÄ…dania listy wszystkich swoich zapisanych zestawĂłw.
+- UĹĽytkownicy muszÄ… mieÄ‡ moĹĽliwoĹ›Ä‡ edycji treĹ›ci pojedynczych fiszek (pytania i odpowiedzi) w zapisanym zestawie.
+- UĹĽytkownicy muszÄ… mieÄ‡ moĹĽliwoĹ›Ä‡ usuniÄ™cia caĹ‚ego zestawu fiszek.
+
+## 4. Granice produktu
+NastÄ™pujÄ…ce funkcje sÄ… Ĺ›wiadomie wyĹ‚Ä…czone z zakresu tego MVP, aby zapewniÄ‡ realizacjÄ™ projektu w wyznaczonym czasie:
+- Generowanie fiszek przez AI na podstawie samego tematu (bez dostarczonego przez uĹĽytkownika tekstu ĹşrĂłdĹ‚owego).
+- Implementacja algorytmu powtĂłrek (np. SM-2) do aktywnej nauki.
+- RÄ™czne tworzenie fiszek od zera w istniejÄ…cym zestawie.
+- Usuwanie pojedynczych fiszek z zestawu.
+- Import plikĂłw w formatach innych niĹĽ czysty tekst (np. PDF, DOCX).
+- Funkcje spoĹ‚ecznoĹ›ciowe, takie jak wspĂłĹ‚dzielenie zestawĂłw fiszek miÄ™dzy uĹĽytkownikami.
+- Integracje z zewnÄ™trznymi platformami edukacyjnymi.
+- Dedykowane aplikacje mobilne (projekt jest wyĹ‚Ä…cznie webowy).
+- Zaawansowany interfejs uĹĽytkownika i rozbudowany frontend oparty na frameworkach JavaScript.
+- Logowanie za poĹ›rednictwem zewnÄ™trznych dostawcĂłw (np. Google, Facebook).
+- Zaawansowane mechanizmy zbierania opinii od uĹĽytkownikĂłw.
+
+## 5. Historyjki uĹĽytkownikĂłw
+### 5.1. ZarzÄ…dzanie kontem
+- ID: US-001
+- TytuĹ‚: Rejestracja nowego uĹĽytkownika
+- Opis: Jako nowy uĹĽytkownik, chcÄ™ mĂłc zaĹ‚oĹĽyÄ‡ konto za pomocÄ… unikalnej nazwy uĹĽytkownika i hasĹ‚a, aby uzyskaÄ‡ dostÄ™p do aplikacji i zapisywaÄ‡ swoje postÄ™py.
+- Kryteria akceptacji:
+  - 1. Formularz rejestracji zawiera pola na nazwÄ™ uĹĽytkownika i hasĹ‚a.
+  - 2. Po pomyĹ›lnym przesĹ‚aniu formularza, nowe konto uĹĽytkownika jest tworzone w bazie danych.
+  - 3. UĹĽytkownik jest informowany o sukcesie i przekierowywany na stronÄ™ logowania.
+  - 4. JeĹ›li nazwa uĹĽytkownika juĹĽ istnieje, wyĹ›wietlany jest odpowiedni komunikat o bĹ‚Ä™dzie.
+
+- ID: US-002
+- TytuĹ‚: Logowanie do aplikacji
+- Opis: Jako zarejestrowany uĹĽytkownik, chcÄ™ mĂłc zalogowaÄ‡ siÄ™ na moje konto, aby uzyskaÄ‡ dostÄ™p do moich zestawĂłw fiszek.
+- Kryteria akceptacji:
+  - 1. Formularz logowania zawiera pola na nazwÄ™ uĹĽytkownika i hasĹ‚o.
+  - 2. Po pomyĹ›lnym zalogowaniu, uĹĽytkownik jest przekierowywany do gĹ‚Ăłwnego panelu aplikacji.
+  - 3. W przypadku podania bĹ‚Ä™dnych danych, wyĹ›wietlany jest odpowiedni komunikat o bĹ‚Ä™dzie.
+
+- ID: US-003
+- TytuĹ‚: Wylogowanie z aplikacji
+- Opis: Jako zalogowany uĹĽytkownik, chcÄ™ mĂłc siÄ™ wylogowaÄ‡, aby bezpiecznie zakoĹ„czyÄ‡ sesjÄ™.
+- Kryteria akceptacji:
+  - 1. W interfejsie aplikacji widoczny jest przycisk "Wyloguj".
+  - 2. Po klikniÄ™ciu przycisku, sesja uĹĽytkownika jest koĹ„czona.
+  - 3. UĹĽytkownik jest przekierowywany na stronÄ™ logowania.
+
+### 5.2. Tworzenie i zarzÄ…dzanie fiszkami
+- ID: US-004
+- TytuĹ‚: Generowanie fiszek z notatek
+- Opis: Jako zalogowany uĹĽytkownik, chcÄ™ wkleiÄ‡ tekst moich notatek z lekcji do formularza, wybraÄ‡ liczbÄ™ fiszek do wygenerowania i zainicjowaÄ‡ proces, aby szybko stworzyÄ‡ materiaĹ‚y do nauki.
+- Kryteria akceptacji:
+  - 1. Na stronie gĹ‚Ăłwnej znajduje siÄ™ pole tekstowe oraz opcje wyboru iloĹ›ci fiszek ("maĹ‚o", "Ĺ›rednio", "duĹĽo").
+  - 2. Po klikniÄ™ciu przycisku "Generuj", aplikacja wysyĹ‚a zapytanie do API modelu AI z treĹ›ciÄ… notatek.
+  - 3. Po otrzymaniu odpowiedzi, wygenerowane pary pytanie-odpowiedĹş sÄ… wyĹ›wietlane na ekranie w czytelnej liĹ›cie.
+  - 4. JeĹ›li pole tekstowe jest puste, po klikniÄ™ciu "Generuj" wyĹ›wietlany jest komunikat o bĹ‚Ä™dzie.
+
+- ID: US-005
+- TytuĹ‚: Zapisywanie nowego zestawu fiszek
+- Opis: Jako uĹĽytkownik, po wygenerowaniu fiszek, chcÄ™ mĂłc zapisaÄ‡ je jako nowy zestaw, nadajÄ…c mu nazwÄ™, aby mĂłc do niego wrĂłciÄ‡ w przyszĹ‚oĹ›ci.
+- Kryteria akceptacji:
+  - 1. Po wygenerowaniu fiszek widoczny jest przycisk "Zapisz zestaw" oraz pole na jego nazwÄ™.
+  - 2. Po klikniÄ™ciu przycisku "Zapisz zestaw" z poprawnie wypeĹ‚nionÄ… nazwÄ…, nowy zestaw jest zapisywany w bazie danych i powiÄ…zany z kontem uĹĽytkownika.
+  - 3. UĹĽytkownik jest przekierowywany do listy swoich zestawĂłw, gdzie widoczny jest nowo dodany element.
+  - 4. JeĹ›li uĹĽytkownik sprĂłbuje zapisaÄ‡ zestaw z pustÄ… nazwÄ…, operacja jest blokowana i wyĹ›wietlany jest odpowiedni komunikat o bĹ‚Ä™dzie (np. "Nazwa zestawu nie moĹĽe byÄ‡ pusta").
+
+- ID: US-006
+- TytuĹ‚: PrzeglÄ…danie listy zapisanych zestawĂłw
+- Opis: Jako zalogowany uĹĽytkownik, chcÄ™ widzieÄ‡ listÄ™ wszystkich moich zapisanych zestawĂłw fiszek, aby mĂłc wybraÄ‡ jeden z nich do przeglÄ…dania lub edycji.
+- Kryteria akceptacji:
+  - 1. W gĹ‚Ăłwnym panelu aplikacji wyĹ›wietlana jest lista nazw wszystkich zestawĂłw naleĹĽÄ…cych do uĹĽytkownika.
+  - 2. KaĹĽda nazwa na liĹ›cie jest linkiem prowadzÄ…cym do widoku szczegĂłĹ‚owego danego zestawu.
+
+- ID: US-007
+- TytuĹ‚: PrzeglÄ…danie zawartoĹ›ci zestawu
+- Opis: Jako uĹĽytkownik, chcÄ™ mĂłc kliknÄ…Ä‡ na wybrany zestaw z mojej listy, aby zobaczyÄ‡ wszystkie fiszki, ktĂłre siÄ™ w nim znajdujÄ….
+- Kryteria akceptacji:
+  - 1. Po klikniÄ™ciu na nazwÄ™ zestawu, wyĹ›wietlana jest strona ze wszystkimi parami pytanie-odpowiedĹş z tego zestawu.
+  - 2. Przy kaĹĽdej fiszce widoczna jest opcja "Edytuj".
+
+- ID: US-008
+- TytuĹ‚: Edycja pojedynczej fiszki
+- Opis: Jako uĹĽytkownik, chcÄ™ mĂłc edytowaÄ‡ treĹ›Ä‡ pytania i odpowiedzi w istniejÄ…cej fiszce, aby poprawiÄ‡ bĹ‚Ä™dy lub doprecyzowaÄ‡ informacje.
+- Kryteria akceptacji:
+  - 1. Po klikniÄ™ciu przycisku "Edytuj" przy fiszce, uĹĽytkownik jest przenoszony do formularza edycji.
+  - 2. Formularz jest wypeĹ‚niony aktualnÄ… treĹ›ciÄ… pytania i odpowiedzi.
+  - 3. Po zapisaniu zmian, dane fiszki w bazie danych sÄ… aktualizowane.
+  - 4. UĹĽytkownik jest przekierowywany z powrotem do widoku zestawu, gdzie widzi zaktualizowanÄ… treĹ›Ä‡.
+
+- ID: US-009
+- TytuĹ‚: Usuwanie caĹ‚ego zestawu fiszek
+- Opis: Jako uĹĽytkownik, chcÄ™ mĂłc usunÄ…Ä‡ caĹ‚y zestaw fiszek, gdy nie jest mi juĹĽ potrzebny.
+- Kryteria akceptacji:
+  - 1. Na liĹ›cie zestawĂłw, przy kaĹĽdej nazwie znajduje siÄ™ przycisk "UsuĹ„".
+  - 2. Po klikniÄ™ciu przycisku, wyĹ›wietlane jest potwierdzenie operacji.
+  - 3. Po potwierdzeniu, caĹ‚y zestaw wraz ze wszystkimi powiÄ…zanymi fiszkami jest usuwany z bazy danych.
+
+## 6. Metryki sukcesu
+### 6.1. Metryki sukcesu projektu (MVP)
+GĹ‚Ăłwnym kryterium sukcesu dla tego etapu jest dostarczenie dziaĹ‚ajÄ…cej aplikacji, ktĂłra w 100% speĹ‚nia poniĹĽsze wymagania zaliczeniowe w wyznaczonym czasie:
+- 1. WdroĹĽona funkcjonalnoĹ›Ä‡ uwierzytelniania uĹĽytkownikĂłw.
+- 2. WdroĹĽona kluczowa logika biznesowa wykorzystujÄ…ca model LLM.
+- 3. WdroĹĽona peĹ‚na funkcjonalnoĹ›Ä‡ CRUD dla danych aplikacji.
+- 4. Istnienie w projekcie co najmniej jednego dziaĹ‚ajÄ…cego testu jednostkowego.
+- 5. Skonfigurowany i dziaĹ‚ajÄ…cy scenariusz CI/CD na GitHub Actions.
+
+### 6.2. Metryki sukcesu produktu (dla przyszĹ‚ego rozwoju)
+Po wdroĹĽeniu MVP i ewentualnym dalszym rozwoju, sukces produktu bÄ™dzie mierzony na podstawie nastÄ™pujÄ…cego wskaĹşnika:
+- WskaĹşnik akceptacji AI: Co najmniej 75% fiszek wygenerowanych przez AI jest akceptowanych przez uĹĽytkownikĂłw (tzn. nie sÄ… przez nich edytowane).
+
+
+
+================================================
+FILE: .ai/put-flashcards-by-id-implementation-plan.md
+================================================
+# API Endpoint Implementation Plan: PUT /flashcards/{card_id}
+
+## 1. PrzeglÄ…d punktu koĹ„cowego
+
+Ten punkt koĹ„cowy umoĹĽliwia aktualizacjÄ™ treĹ›ci pojedynczej fiszki (pytania i odpowiedzi). DostÄ™p jest ograniczony do wĹ‚aĹ›ciciela zestawu, do ktĂłrego naleĹĽy fiszka.
+
+## 2. SzczegĂłĹ‚y ĹĽÄ…dania
+
+-   **Metoda HTTP**: `PUT`
+-   **Struktura URL**: `/flashcards/{card_id}`
+-   **Parametry**: 
+    -   `card_id` (integer, wymagane): Unikalny identyfikator fiszki do zaktualizowania.
+-   **Request Body**: 
+    -   **Content-Type**: `application/json`
+    -   **Pola**:
+        -   `question` (string, wymagane): Nowa treĹ›Ä‡ pytania fiszki.
+        -   `answer` (string, wymagane): Nowa treĹ›Ä‡ odpowiedzi fiszki.
+    -   **Schemat**: `schemas.FlashcardUpdate`
+
+## 3. Wykorzystywane typy
+
+-   **Command Model**: `schemas.FlashcardUpdate` (dla danych wejĹ›ciowych ĹĽÄ…dania)
+-   **DTO (Data Transfer Object)**: `schemas.Flashcard` (dla danych wyjĹ›ciowych odpowiedzi)
+-   **Model Bazy Danych**: `models.Flashcard` (dla interakcji z bazÄ… danych)
+
+## 4. SzczegĂłĹ‚y odpowiedzi
+
+-   **OdpowiedĹş sukcesu (200 OK)**:
+    ```json
+    {
+      "id": 1,
+      "set_id": 1,
+      "question": "string",
+      "answer": "string",
+      "created_at": "2025-08-04T10:00:00Z",
+      "updated_at": "2025-08-04T11:00:00Z"
+    }
+    ```
+    -   **Schemat**: `schemas.Flashcard`
+-   **Odpowiedzi bĹ‚Ä™dĂłw**:
+    -   `401 Unauthorized`: JeĹ›li uĹĽytkownik nie jest uwierzytelniony.
+    -   `403 Forbidden`: JeĹ›li uwierzytelniony uĹĽytkownik nie jest wĹ‚aĹ›cicielem zestawu, do ktĂłrego naleĹĽy fiszka.
+    -   `404 Not Found`: JeĹ›li fiszka o podanym `card_id` nie istnieje.
+    -   `422 Unprocessable Entity`: JeĹ›li ciaĹ‚o ĹĽÄ…dania jest nieprawidĹ‚owe (np. puste pola `question` lub `answer`).
+    -   `500 Internal Server Error`: W przypadku nieoczekiwanego bĹ‚Ä™du serwera.
+
+## 5. PrzepĹ‚yw danych
+
+1.  Klient wysyĹ‚a ĹĽÄ…danie `PUT` na adres `/flashcards/{card_id}` z nowÄ… treĹ›ciÄ… fiszki w formacie JSON.
+2.  Router FastAPI przechwytuje ĹĽÄ…danie.
+3.  Punkt koĹ„cowy wymaga uwierzytelnienia uĹĽytkownika i pobiera `current_user`.
+4.  `card_id` jest automatycznie walidowany przez FastAPI.
+5.  Dane wejĹ›ciowe sÄ… walidowane przez `schemas.FlashcardUpdate`.
+6.  Punkt koĹ„cowy wywoĹ‚uje funkcjÄ™ serwisowÄ… (np. `crud.update_flashcard`), przekazujÄ…c `card_id`, `user_id` (z `current_user`) i instancjÄ™ sesji bazy danych, oraz `flashcard_data`.
+7.  Funkcja serwisowa najpierw prĂłbuje pobraÄ‡ fiszkÄ™ o podanym `card_id` i sprawdziÄ‡, czy naleĹĽy ona do zestawu, ktĂłrego wĹ‚aĹ›cicielem jest `user_id`.
+8.  JeĹ›li fiszka nie zostanie znaleziona lub nie naleĹĽy do uĹĽytkownika, funkcja serwisowa zgĹ‚asza bĹ‚Ä…d (np. `HTTPException` 404 lub 403).
+9.  JeĹ›li fiszka zostanie znaleziona i autoryzowana, jej pola `question` i `answer` sÄ… aktualizowane, a `updated_at` jest ustawiane na bieĹĽÄ…cÄ… datÄ™/czas.
+10. Zmiany sÄ… zatwierdzane w bazie danych.
+11. Funkcja serwisowa zwraca zaktualizowany obiekt `models.Flashcard`.
+12. Punkt koĹ„cowy zwraca odpowiedĹş `200 OK` z zaktualizowanÄ… fiszkÄ…, sformatowanÄ… zgodnie ze schematem `schemas.Flashcard`.
+
+## 6. WzglÄ™dy bezpieczeĹ„stwa
+
+-   **Uwierzytelnienie**: Punkt koĹ„cowy jest chroniony i dostÄ™pny tylko dla uwierzytelnionych uĹĽytkownikĂłw.
+-   **Autoryzacja**: Aktualizacja jest moĹĽliwa tylko dla fiszek naleĹĽÄ…cych do zestawĂłw, ktĂłrych wĹ‚aĹ›cicielem jest uwierzytelniony uĹĽytkownik. Zapobiega to modyfikacji danych innych uĹĽytkownikĂłw.
+-   **Walidacja danych wejĹ›ciowych**: Pydantic waliduje `question` i `answer`, zapobiegajÄ…c nieprawidĹ‚owym danym.
+
+## 7. ObsĹ‚uga bĹ‚Ä™dĂłw
+
+-   `401 Unauthorized`: JeĹ›li uĹĽytkownik nie jest uwierzytelniony.
+-   `403 Forbidden`: JeĹ›li uwierzytelniony uĹĽytkownik prĂłbuje zaktualizowaÄ‡ fiszkÄ™, ktĂłra nie naleĹĽy do niego.
+-   `404 Not Found`: JeĹ›li fiszka o podanym `card_id` nie istnieje.
+-   `422 Unprocessable Entity`: JeĹ›li ciaĹ‚o ĹĽÄ…dania jest nieprawidĹ‚owe (np. puste `question` lub `answer`).
+-   `500 Internal Server Error`: W przypadku nieoczekiwanego bĹ‚Ä™du serwera.
+
+## 8. RozwaĹĽania dotyczÄ…ce wydajnoĹ›ci
+
+-   **Operacja aktualizacji**: Aktualizacja pojedynczego rekordu powinna byÄ‡ szybka, zwĹ‚aszcza przy uĹĽyciu indeksĂłw.
+
+## 9. Etapy wdroĹĽenia
+
+1.  **CRUD Operations**: W pliku `app/crud/crud.py` zaimplementuj funkcjÄ™ `update_flashcard(db: Session, card_id: int, user_id: int, flashcard_data: schemas.FlashcardUpdate) -> models.Flashcard`.
+    -   Funkcja ta powinna pobraÄ‡ fiszkÄ™ po `card_id` i sprawdziÄ‡ jej przynaleĹĽnoĹ›Ä‡ do uĹĽytkownika.
+    -   JeĹ›li fiszka nie istnieje lub nie naleĹĽy do uĹĽytkownika, zgĹ‚oĹ› `HTTPException` (404 lub 403).
+    -   Zaktualizuj pola `question` i `answer` oraz `updated_at`.
+    -   ZatwierdĹş zmiany i odĹ›wieĹĽ obiekt.
+    -   ZwrĂłÄ‡ zaktualizowanÄ… fiszkÄ™.
+2.  **Router**: W pliku `app/routers/flashcards.py`:
+    -   Zaimplementuj punkt koĹ„cowy `PUT /flashcards/{card_id}`.
+    -   UĹĽyj `schemas.FlashcardUpdate` jako typu dla ciaĹ‚a ĹĽÄ…dania.
+    -   Wstrzyknij zaleĹĽnoĹ›ci: `db: Session = Depends(get_db)` i `current_user: models.User = Depends(get_current_user)`.
+    -   Pobierz `card_id` ze Ĺ›cieĹĽki.
+    -   WywoĹ‚aj `crud.update_flashcard`, przekazujÄ…c `card_id`, `current_user.id` i `flashcard_data`.
+    -   ZwrĂłÄ‡ zaktualizowanÄ… fiszkÄ™ w formacie `schemas.Flashcard`.
+3.  **Integracja**: Upewnij siÄ™, ĹĽe router jest doĹ‚Ä…czony do gĹ‚Ăłwnej instancji aplikacji FastAPI w `app/main.py`.
+
+
+================================================
+FILE: .ai/stack_weryfikacja.md
+================================================
+Error reading file with 'cp1250': 'charmap' codec can't decode byte 0x81 in position 2145: character maps to <undefined>
+
+
+================================================
+FILE: .ai/tech-stack.md
+================================================
+# Proponowany Stos Technologiczny
+
+Na podstawie analizy dokumentu wymagaĹ„ produktu (PRD), w szczegĂłlnoĹ›ci z naciskiem na prostotÄ™, szybkoĹ›Ä‡ wdroĹĽenia MVP i jasno okreĹ›lone granice, proponowany jest nastÄ™pujÄ…cy stos technologiczny:
+
+## Backend
+
+*   **Framework:** **FastAPI**
+    *   **Uzasadnienie:** Nowoczesny, wysokowydajny framework idealny do budowy API. Jego wbudowana walidacja danych (dziÄ™ki Pydantic) bÄ™dzie niezwykle pomocna przy obsĹ‚udze danych od uĹĽytkownika i odpowiedzi z modelu LLM. Automatycznie generowana dokumentacja (Swagger UI) znaczÄ…co przyspieszy testowanie endpointĂłw. Jest prostszy w konfiguracji niĹĽ Django dla projektu o tym zakresie.
+
+*   **Baza Danych:** **SQLite**
+    *   **Uzasadnienie:** Wbudowana w Pythona, bezserwerowa baza danych. Jest to najprostsze moĹĽliwe rozwiÄ…zanie, ktĂłre w peĹ‚ni zaspokaja potrzeby MVP (przechowywanie uĹĽytkownikĂłw i zestawĂłw fiszek). Eliminuje potrzebÄ™ konfiguracji i zarzÄ…dzania osobnym serwerem bazodanowym. CaĹ‚a baza danych to pojedynczy plik.
+
+*   **ORM (Object-Relational Mapping):** **SQLAlchemy**
+    *   **Uzasadnienie:** Standard de facto w Ĺ›wiecie Pythona do pracy z relacyjnymi bazami danych. UmoĹĽliwia definiowanie struktury bazy danych za pomocÄ… klas Pythona i wykonywanie zapytaĹ„ w sposĂłb obiektowy, co jest znacznie czytelniejsze i bezpieczniejsze niĹĽ pisanie surowego SQL. Doskonale integruje siÄ™ z FastAPI.
+
+*   **Komunikacja z AI (Ollama):** **HTTPX**
+    *   **Uzasadnienie:** Nowoczesna biblioteka do wykonywania zapytaĹ„ HTTP, ktĂłra wspiera zarĂłwno operacje synchroniczne, jak i asynchroniczne. PoniewaĹĽ FastAPI jest frameworkiem asynchronicznym, uĹĽycie `HTTPX` pozwoli na nieblokujÄ…cÄ… komunikacjÄ™ z API Ollamy, co jest kluczowe dla wydajnoĹ›ci.
+
+## Frontend
+
+*   **Silnik SzablonĂłw:** **Jinja2**
+    *   **Uzasadnienie:** Standardowy silnik szablonĂłw, ktĂłry integruje siÄ™ z FastAPI "prosto z pudeĹ‚ka". Pozwala na generowanie dynamicznych stron HTML po stronie serwera, bez koniecznoĹ›ci budowania skomplikowanego frontendu w JavaScripcie, co jest zgodne z granicami projektu zdefiniowanymi w PRD.
+
+*   **Framework CSS:** **Bootstrap**
+    *   **Uzasadnienie:** UmoĹĽliwi stworzenie czystego i responsywnego interfejsu uĹĽytkownika przy minimalnym wysiĹ‚ku. Zamiast pisaÄ‡ wĹ‚asny CSS od zera, moĹĽna bÄ™dzie skorzystaÄ‡ z gotowych komponentĂłw (formularze, przyciski, listy), co znaczÄ…co przyspieszy pracÄ™.
+
+## Serwer
+
+*   **Serwer ASGI:** **Uvicorn**
+    *   **Uzasadnienie:** Standardowy serwer do uruchamiania aplikacji opartych na FastAPI. Jest szybki i prosty w uĹĽyciu.
+
+## Podsumowanie
+
+| Komponent                  | Technologia | Uzasadnienie                                       |
+| -------------------------- | ----------- | -------------------------------------------------- |
+| **Framework Backend**      | FastAPI     | SzybkoĹ›Ä‡, walidacja danych, auto-dokumentacja API. |
+| **Baza Danych**            | SQLite      | Prostota, brak konfiguracji, idealna dla MVP.      |
+| **ORM**                    | SQLAlchemy  | Standard branĹĽowy, bezpieczna interakcja z bazÄ….   |
+| **Klient HTTP (do Ollama)**| HTTPX       | Wsparcie dla asynchronicznoĹ›ci w FastAPI.          |
+| **Silnik SzablonĂłw HTML**  | Jinja2      | Proste generowanie HTML po stronie serwera.        |
+| **Framework CSS**          | Bootstrap   | Szybkie budowanie estetycznego interfejsu.         |
+| **Serwer Aplikacji**       | Uvicorn     | Standardowy serwer dla FastAPI.                    |
+
+

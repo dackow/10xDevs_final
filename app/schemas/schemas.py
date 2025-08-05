@@ -1,42 +1,99 @@
 from pydantic import BaseModel
+from datetime import datetime
+from typing import List, Optional
+
+# =============================================================================
+# 1. SCHEMATY DLA FISZEK (FLASHCARDS)
+# =============================================================================
 
 class FlashcardBase(BaseModel):
+    """Podstawowy schemat dla fiszki, zawiera wspolne pola."""
     question: str
     answer: str
 
 class FlashcardCreate(FlashcardBase):
+    """Schemat uzywany do tworzenia nowej fiszki (np. przez AI)."""
+    pass
+
+class FlashcardUpdate(FlashcardBase):
+    """Schemat uzywany do aktualizacji istniejacej fiszki."""
     pass
 
 class Flashcard(FlashcardBase):
+    """Pelny schemat fiszki, uzywany w odpowiedziach API (DTO)."""
     id: int
-    flashcard_set_id: int
+    set_id: int
+    created_at: datetime
+    updated_at: datetime
 
     class Config:
-        orm_mode = True
+        from_attributes = True
+
+# =============================================================================
+# 2. SCHEMATY DLA ZESTAWOW FISZEK (FLASHCARD SETS)
+# =============================================================================
 
 class FlashcardSetBase(BaseModel):
-    title: str
+    """Podstawowy schemat dla zestawu fiszek."""
+    name: str
 
 class FlashcardSetCreate(FlashcardSetBase):
-    pass
+    """Schemat uzywany do tworzenia nowego zestawu wraz z fiszkami (Command Model)."""
+    flashcards: List[FlashcardCreate]
 
 class FlashcardSet(FlashcardSetBase):
+    """Schemat reprezentujacy zestaw na liscie (widok podsumowania)."""
     id: int
-    owner_id: int
-    flashcards: list[Flashcard] = []
+    user_id: int
+    created_at: datetime
+    updated_at: datetime
 
     class Config:
-        orm_mode = True
+        from_attributes = True
+
+class FlashcardSetDetail(FlashcardSet):
+    """Schemat reprezentujacy pelny, szczegolowy widok zestawu z fiszkami (DTO)."""
+    flashcards: List[Flashcard] = []
+
+# =============================================================================
+# 3. SCHEMATY DLA UZYTKOWNIKOW (USERS)
+# =============================================================================
 
 class UserBase(BaseModel):
+    """Podstawowy schemat uzytkownika."""
     username: str
 
 class UserCreate(UserBase):
+    """Schemat uzywany do tworzenia nowego uzytkownika (Command Model)."""
     password: str
 
 class User(UserBase):
+    """Schemat uzytkownika zwracany przez API (DTO), bez hasla."""
     id: int
-    flashcard_sets: list[FlashcardSet] = []
+    created_at: datetime
+    updated_at: datetime
 
     class Config:
-        orm_mode = True
+        from_attributes = True
+
+# =============================================================================
+# 4. SCHEMATY DLA MECHANIZMOW POMOCNICZYCH (AUTH, AI)
+# =============================================================================
+
+class Token(BaseModel):
+    """Schemat dla tokena uwierzytelniajacego JWT."""
+    access_token: str
+    token_type: str
+
+class TokenData(BaseModel):
+    """Schemat dla danych zakodowanych w tokenie."""
+    username: Optional[str] = None
+
+class AIGenerationRequest(BaseModel):
+    """Schemat dla zadania wygenerowania fiszek przez AI (Command Model)."""
+    text: str
+    count: int
+
+class AIGenerationResponse(BaseModel):
+    """Schemat dla odpowiedzi z wygenerowanymi fiszkami (DTO)."""
+    flashcards: List[FlashcardCreate]

@@ -1,3 +1,5 @@
+import sys
+print("sys.path before imports:", sys.path)
 from fastapi import FastAPI
 from app.routers import auth, flashcards
 
