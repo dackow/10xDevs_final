@@ -4,7 +4,8 @@ from fastapi.templating import Jinja2Templates
 from sqlalchemy.orm import Session
 from app import models
 from app.crud.crud import update_flashcard, create_flashcard_set, delete_flashcard_set, get_flashcard_set, get_flashcard_sets, get_flashcard_for_editing
-from app.schemas.schemas import Flashcard, FlashcardUpdate, FlashcardSetCreate, FlashcardSetDetail, FlashcardSet
+from app.services.ollama import generate_flashcards_from_text
+from app.schemas.schemas import Flashcard, FlashcardUpdate, FlashcardSetCreate, FlashcardSetDetail, FlashcardSet, FlashcardCreate
 from app.dependencies import get_db, get_current_user
 import logging
 
@@ -129,7 +130,7 @@ async def handle_generate_view_post(
 
         flashcards_to_create = []
         for q, a in zip(questions, answers):
-            flashcards_to_create.append(Flashcard(question=q, answer=a))
+            flashcards_to_create.append(FlashcardCreate(question=q, answer=a))
         
         try:
             set_data = FlashcardSetCreate(name=set_name, flashcards=flashcards_to_create)

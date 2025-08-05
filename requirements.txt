@@ -45,3 +45,5 @@ urllib3==2.5.0
 
 # Don't pin starlette - let FastAPI manage it automatically
 # starlette will be installed automatically by FastAPI in compatible version
+
+json_repair==0.48.0

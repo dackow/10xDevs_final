@@ -48,8 +48,6 @@ def create_flashcard_set(db: Session, set_data: FlashcardSetCreate, user_id: int
 
     db.commit()
     db.refresh(db_flashcard_set)
-    # Załaduj relację flashcards, aby była dostępna w zwróconym obiekcie
-    db.refresh(db_flashcard_set)
     return db_flashcard_set
 
 

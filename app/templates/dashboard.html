@@ -15,9 +15,9 @@
         <a href="/generate" class="btn btn-primary">Stwórz nowy zestaw</a>
     </div>
 
-    {% if sets %}
+    {% if flashcard_sets %}
     <ul class="list-group">
-        {% for set in sets %}
+        {% for set in flashcard_sets %}
         <li class="list-group-item d-flex justify-content-between align-items-center">
             <a href="/sets/{{ set.id }}" class="text-decoration-none fs-5">{{ set.name }}</a>
             <button type="button" class="btn btn-danger btn-sm" data-bs-toggle="modal" data-bs-target="#deleteConfirmationModal" data-set-id="{{ set.id }}" data-set-name="{{ set.name }}">
