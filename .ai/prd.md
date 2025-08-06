@@ -42,12 +42,13 @@ Następujące funkcje są świadomie wyłączone z zakresu tego MVP, aby zapewni
 ### 5.1. Zarządzanie kontem
 - ID: US-001
 - Tytuł: Rejestracja nowego użytkownika
-- Opis: Jako nowy użytkownik, chcę móc założyć konto za pomocą unikalnej nazwy użytkownika i hasła, aby uzyskać dostęp do aplikacji i zapisywać swoje postępy.
+- Opis: Jako nowy użytkownik, chcę móc założyć konto za pomocą unikalnej nazwy użytkownika, hasła i jego potwierdzenia, aby uzyskać dostęp do aplikacji i zapisywać swoje postępy.
 - Kryteria akceptacji:
-  - 1. Formularz rejestracji zawiera pola na nazwę użytkownika i hasła.
+  - 1. Formularz rejestracji zawiera pola na nazwę użytkownika, hasło i **potwierdzenie hasła**.
   - 2. Po pomyślnym przesłaniu formularza, nowe konto użytkownika jest tworzone w bazie danych.
   - 3. Użytkownik jest informowany o sukcesie i przekierowywany na stronę logowania.
   - 4. Jeśli nazwa użytkownika już istnieje, wyświetlany jest odpowiedni komunikat o błędzie.
+  - 5. **Jeśli hasła się nie zgadzają, wyświetlany jest komunikat o błędzie.**
 
 - ID: US-002
 - Tytuł: Logowanie do aplikacji
@@ -62,8 +63,17 @@ Następujące funkcje są świadomie wyłączone z zakresu tego MVP, aby zapewni
 - Opis: Jako zalogowany użytkownik, chcę móc się wylogować, aby bezpiecznie zakończyć sesję.
 - Kryteria akceptacji:
   - 1. W interfejsie aplikacji widoczny jest przycisk "Wyloguj".
-  - 2. Po kliknięciu przycisku, sesja użytkownika jest kończona.
+  - 2. Po kliknięciu przycisku, sesja użytkownika jest kończona (**np. przez usunięcie ciasteczka z tokenem**).
   - 3. Użytkownik jest przekierowywany na stronę logowania.
+
+- **ID: US-010**
+- **Tytuł: Odzyskiwanie hasła**
+- **Opis: Jako użytkownik, który zapomniał hasła, chcę mieć możliwość jego zresetowania, aby odzyskać dostęp do konta.**
+- **Kryteria akceptacji:**
+  - **1. Na stronie logowania znajduje się link "Zapomniałem hasła".**
+  - **2. Po kliknięciu linku, użytkownik jest proszony o podanie adresu e-mail powiązanego z kontem.**
+  - **3. Na podany adres e-mail wysyłany jest link z unikalnym tokenem do resetowania hasła.**
+  - **4. Po otwarciu linku, użytkownik może ustawić nowe hasło.**
 
 ### 5.2. Tworzenie i zarządzanie fiszkami
 - ID: US-004
@@ -74,6 +84,14 @@ Następujące funkcje są świadomie wyłączone z zakresu tego MVP, aby zapewni
   - 2. Po kliknięciu przycisku "Generuj", aplikacja wysyła zapytanie do API modelu AI z treścią notatek.
   - 3. Po otrzymaniu odpowiedzi, wygenerowane pary pytanie-odpowiedź są wyświetlane na ekranie w czytelnej liście.
   - 4. Jeśli pole tekstowe jest puste, po kliknięciu "Generuj" wyświetlany jest komunikat o błędzie.
+
+- **ID: US-011**
+- **Tytuł: Generowanie fiszek bez logowania (ad-hoc)**
+- **Opis: Jako gość (niezalogowany użytkownik), chcę móc wypróbować funkcję generowania fiszek, aby zobaczyć, jak działa aplikacja.**
+- **Kryteria akceptacji:**
+  - **1. Strona główna dla niezalogowanych użytkowników pozwala na generowanie fiszek.**
+  - **2. Po wygenerowaniu fiszek, wyświetlany jest komunikat zachęcający do rejestracji lub zalogowania w celu ich zapisania.**
+  - **3. Przycisk "Zapisz zestaw" jest nieaktywny lub jego kliknięcie przekierowuje na stronę logowania.**
 
 - ID: US-005
 - Tytuł: Zapisywanie nowego zestawu fiszek
