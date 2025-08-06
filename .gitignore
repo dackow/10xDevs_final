@@ -1,0 +1,21 @@
+# Environments
+.env
+.venv/
+
+# Python cache
+__pycache__/
+*.pyc
+
+# Databases
+*.db
+
+# IDE specific
+.vscode/
+
+# Test specific
+.pytest_cache/
+
+# Other
+digest.txt
+commit_message.txt
+history.txt
