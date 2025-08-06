@@ -1,7 +1,7 @@
 import sys
 print("sys.path before imports:", sys.path)
 from fastapi import FastAPI, Request, Depends
-from fastapi.responses import HTMLResponse
+from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
 from sqlalchemy.orm import Session
 from app.dependencies import get_db, get_current_user
@@ -18,7 +18,7 @@ app.include_router(flashcards.router)
 
 @app.get("/")
 def read_root():
-    return {"message": "Welcome to the Flashcard Generator API"}
+    return RedirectResponse(url="/login")
 
 @app.get("/dashboard", response_class=HTMLResponse)
 async def dashboard(

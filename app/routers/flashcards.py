@@ -1,3 +1,4 @@
+import json
 from fastapi import APIRouter, Depends, HTTPException, status, Query, Request, Form
 from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
@@ -22,7 +23,10 @@ async def set_detail_view(
     db_set = get_flashcard_set(db=db, set_id=set_id, user_id=current_user.id)
     if db_set is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Flashcard set not found")
-    return templates.TemplateResponse("set_detail.html", {"request": request, "user": current_user, "set": db_set})
+    
+    flashcards_json = json.dumps([{"id": fc.id, "question": fc.question, "answer": fc.answer} for fc in db_set.flashcards])
+    
+    return templates.TemplateResponse("set_detail.html", {"request": request, "user": current_user, "set": db_set, "flashcards_json": flashcards_json})
 
 @router.get("/cards/{card_id}/edit", response_class=HTMLResponse)
 async def edit_flashcard_view(

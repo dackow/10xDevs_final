@@ -2,22 +2,80 @@
 
 {% block content %}
 <div class="container mt-4">
-    <a href="/dashboard" class="btn btn-secondary mb-3">Wróć do panelu</a>
-
-    <h1 class="mb-4">{{ set.name }}</h1>
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <a href="/dashboard" class="btn btn-secondary">Wróć do panelu</a>
+        <h1 class="mb-0 h3">{{ set.name }}</h1>
+        <span id="card-counter" class="badge bg-primary rounded-pill"></span>
+    </div>
 
     {% if set.flashcards %}
-    <ul class="list-group">
-        {% for card in set.flashcards %}
-        <li class="list-group-item d-flex justify-content-between align-items-center">
-            <div>
-                <strong>Pytanie:</strong> {{ card.question }}<br>
-                <strong>Odpowiedź:</strong> {{ card.answer }}
+    <div id="flashcard-container" class="card text-center shadow-sm">
+        <div class="card-body" style="min-height: 150px;">
+            <p id="question" class="card-text fs-4"></p>
+            <p id="answer" class="card-text fs-5 text-muted" style="display: none;"></p>
+        </div>
+        <div class="card-footer bg-light">
+            <div class="d-flex justify-content-center align-items-center">
+                <button id="prev-btn" class="btn btn-outline-secondary mx-2">Poprzednia</button>
+                <button id="show-answer-btn" class="btn btn-primary mx-2">Pokaż odpowiedź</button>
+                <button id="next-btn" class="btn btn-outline-secondary mx-2">Następna</button>
+                <a href="#" id="edit-card-btn" class="btn btn-outline-info btn-sm ms-auto">Edytuj</a>
             </div>
-            <a href="/cards/{{ card.id }}/edit" class="btn btn-secondary btn-sm">Edytuj</a>
-        </li>
-        {% endfor %}
-    </ul>
+        </div>
+    </div>
+
+    <script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const flashcards = JSON.parse('{{ flashcards_json | safe }}');
+        if (!flashcards || flashcards.length === 0) return;
+
+        let currentIndex = 0;
+
+        const questionEl = document.getElementById('question');
+        const answerEl = document.getElementById('answer');
+        const showAnswerBtn = document.getElementById('show-answer-btn');
+        const prevBtn = document.getElementById('prev-btn');
+        const nextBtn = document.getElementById('next-btn');
+        const counterEl = document.getElementById('card-counter');
+        const editBtn = document.getElementById('edit-card-btn');
+
+        function showCard(index) {
+            const card = flashcards[index];
+            questionEl.textContent = card.question;
+            answerEl.textContent = card.answer;
+            answerEl.style.display = 'none';
+            showAnswerBtn.textContent = 'Pokaż odpowiedź';
+            
+            counterEl.textContent = `${index + 1} / ${flashcards.length}`;
+            editBtn.href = `/cards/${card.id}/edit`;
+
+            prevBtn.disabled = index === 0;
+            nextBtn.disabled = index === flashcards.length - 1;
+        }
+
+        showAnswerBtn.addEventListener('click', () => {
+            const isHidden = answerEl.style.display === 'none';
+            answerEl.style.display = isHidden ? 'block' : 'none';
+            showAnswerBtn.textContent = isHidden ? 'Ukryj odpowiedź' : 'Pokaż odpowiedź';
+        });
+
+        prevBtn.addEventListener('click', () => {
+            if (currentIndex > 0) {
+                currentIndex--;
+                showCard(currentIndex);
+            }
+        });
+
+        nextBtn.addEventListener('click', () => {
+            if (currentIndex < flashcards.length - 1) {
+                currentIndex++;
+                showCard(currentIndex);
+            }
+        });
+
+        showCard(currentIndex);
+    });
+    </script>
     {% else %}
     <div class="alert alert-info" role="alert">
         Ten zestaw nie zawiera żadnych fiszek.
