@@ -10,12 +10,12 @@ Zarządzanie fiszkami (CRUD): Aplikacja umożliwi pełne operacje CRUD: tworzeni
 Proces edycji: Po wygenerowaniu zestawu, użytkownik będzie mógł przejrzeć wszystkie fiszki, a następnie edytować każdą z nich osobno na dedykowanym, prostym ekranie edycji.
 Zbieranie opinii: W pierwszej wersji MVP nie będzie dedykowanego mechanizmu do zbierania opinii od użytkowników.
 Ramy czasowe i zakres: Projekt musi zostać zrealizowany w ciągu 28 godzin (7 dni po 4 godziny) i musi spełniać 5 konkretnych wymagań zaliczeniowych (auth, logika biznesowa z LLM, CRUD, test, CI/CD).
-Architektura techniczna: Backend oparty na lekkim frameworku (Flask/FastAPI), baza danych SQLite oraz prosty frontend w HTML.
+Architektura techniczna: Backend oparty na lekkim frameworku (Flask/FastAPI), baza danych Supabase (PostgreSQL) oraz prosty frontend w HTML.
 Definicja ilości fiszek: Opcje "mało", "średnio", "dużo" zostaną zmapowane na konkretne liczby: 5, 10 i 15 fiszek.
 Komunikacja z AI: Wybrana liczba fiszek zostanie przekazana do modelu AI jako precyzyjna, bezpośrednia instrukcja w prompcie (np. "wygeneruj dokładnie 10 fiszek").
 </decisions>
 <matched_recommendations>
-Rekomendacja dotycząca prostego scenariusza i architektury: Została w pełni zaakceptowana. Zdefiniowano kluczowy "happy path" użytkownika oraz wybrano minimalistyczny stos technologiczny (Python/Flask, SQLite, prosty HTML), aby zapewnić realizację projektu w wyznaczonym czasie.
+Rekomendacja dotycząca prostego scenariusza i architektury: Została w pełni zaakceptowana. Zdefiniowano kluczowy "happy path" użytkownika oraz wybrano minimalistyczny stos technologiczny (Python/Flask, Supabase (PostgreSQL), prosty HTML), aby zapewnić realizację projektu w wyznaczonym czasie.
 Rekomendacja dotycząca skupienia się na "master-prompcie": Została zaakceptowana jako kluczowy element projektu. Ustalono, że stworzenie precyzyjnego i łatwo modyfikowalnego promptu będzie priorytetem w celu zapewnienia jakości generowanych fiszek.
 Rekomendacja dotycząca podziału pracy na bloki: Została zaakceptowana i stała się podstawą planu działania. Praca zostanie podzielona na cztery logiczne etapy: szkielet aplikacji, implementacja Auth i CRUD, integracja z AI, a na końcu testy i CI/CD.
 Rekomendacja dotycząca uproszczenia zakresu: Pierwotna rekomendacja o radykalnym uproszczeniu została odrzucona na rzecz planu, który spełniałby wymagania zaliczeniowe. Jednak jej duch został zachowany poprzez świadome odłożenie na później wszystkich funkcji (jak system powtórek), które nie były absolutnie konieczne do zaliczenia.

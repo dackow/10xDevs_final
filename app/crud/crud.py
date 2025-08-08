@@ -1,121 +1,121 @@
-from datetime import datetime, UTC
-from sqlalchemy.orm import Session, joinedload
-from app import models
-from app.schemas.schemas import UserCreate, FlashcardSetCreate, FlashcardUpdate
+from supabase import Client
+from app.schemas.schemas import FlashcardSetCreate, FlashcardCreate
 from fastapi import HTTPException, status
+from typing import Union, Dict, Any, List
+import uuid
 
-
-def get_user_by_username(db: Session, username: str):
-    return db.query(models.User).filter(models.User.username == username).first()
-
-from app.services import auth_service
-
-def create_user(db: Session, user: UserCreate):
-    db_user = get_user_by_username(db, username=user.username)
-    if db_user:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Username already registered")
-    hashed_password = auth_service.get_password_hash(user.password)
-    db_user = models.User(username=user.username, password_hash=hashed_password)
-    db.add(db_user)
-    db.commit()
-    db.refresh(db_user)
-    return db_user
-
-
-def create_flashcard_set(db: Session, set_data: FlashcardSetCreate, user_id: int):
-    # Sprawdzenie unikalności nazwy zestawu dla danego użytkownika
-    existing_set = db.query(models.FlashcardSet).filter(
-        models.FlashcardSet.user_id == user_id,
-        models.FlashcardSet.name == set_data.name
-    ).first()
-    if existing_set:
-        # Zgłoś wyjątek, który zostanie obsłużony w routerze
-        raise ValueError("Flashcard set with this name already exists for this user.")
-
-    # Utworzenie nowego zestawu fiszek
-    db_flashcard_set = models.FlashcardSet(name=set_data.name, user_id=user_id)
-    db.add(db_flashcard_set)
-    db.flush()  # Upewnij się, że db_flashcard_set.id jest dostępne
-
-    # Dodanie fiszek do zestawu
-    for flashcard_data in set_data.flashcards:
-        db_flashcard = models.Flashcard(
-            question=flashcard_data.question,
-            answer=flashcard_data.answer,
-            set_id=db_flashcard_set.id
-        )
-        db.add(db_flashcard)
-
-    db.commit()
-    db.refresh(db_flashcard_set)
-    return db_flashcard_set
-
-
-def get_flashcard_set(db: Session, set_id: int, user_id: int):
-    return db.query(models.FlashcardSet).options(joinedload(models.FlashcardSet.flashcards)).filter(
-        models.FlashcardSet.id == set_id,
-        models.FlashcardSet.user_id == user_id
-    ).first()
-
-
-def get_flashcard_sets(db: Session, user_id: int):
-    return db.query(models.FlashcardSet).filter(models.FlashcardSet.user_id == user_id).all()
-
-
-def get_flashcard_for_editing(db: Session, card_id: int, user_id: int):
-    """
-    Retrieves a flashcard for editing, verifying ownership.
-
-    Args:
-        db: The database session.
-        card_id: The ID of the flashcard.
-        user_id: The ID of the user.
-
-    Returns:
-        The flashcard if it exists and belongs to the user, otherwise None.
-    """
-    return (
-        db.query(models.Flashcard)
-        .join(models.FlashcardSet)
-        .filter(models.Flashcard.id == card_id, models.FlashcardSet.user_id == user_id)
-        .first()
-    )
-
-def update_flashcard(db: Session, card_id: int, user_id: int, flashcard_data: dict):
-    """
-    Aktualizuje fiszkę na podstawie jej ID, weryfikując, czy użytkownik jest właścicielem.
-    """
-    # Pobierz fiszkę z joinem do zestawu, weryfikując jednocześnie własność
-    db_flashcard = db.query(models.Flashcard).join(models.FlashcardSet).filter(
-        models.Flashcard.id == card_id,
-        models.FlashcardSet.user_id == user_id
-    ).first()
-
-    if not db_flashcard:
-        return None
-
-    # Aktualizacja danych
-    for key, value in flashcard_data.items():
-        if hasattr(db_flashcard, key):
-            setattr(db_flashcard, key, value)
-
-    # Ustaw updated_at na aktualny czas
-    db_flashcard.updated_at = datetime.now(UTC)
+def create_flashcard_set(supabase: Client, set_data: FlashcardSetCreate, user_id: str) -> Dict[str, Any]:
+    """Uproszczona wersja bez obsługi RLS"""
     
-    db.commit()
-    db.refresh(db_flashcard)
-    return db_flashcard
+    if not user_id:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Brak user_id")
+    
+    set_name = set_data.name.strip()
+    if not set_name:
+        raise ValueError("Nazwa zestawu nie może być pusta.")
+    
+    print(f"🔍 Creating set '{set_name}' for user: {user_id}")
+    
+    # Sprawdź duplikaty
+    existing_set = supabase.table('flashcard_sets')\
+        .select('id')\
+        .eq('user_id', user_id)\
+        .eq('name', set_name)\
+        .execute()
+    
+    if existing_set.data:
+        raise ValueError(f"Zestaw o nazwie '{set_name}' już istnieje.")
+    
+    # INSERT zestawu
+    new_set_data = {
+        'name': set_name,
+        'user_id': user_id
+    }
+    
+    try:
+        set_response = supabase.table('flashcard_sets')\
+            .insert(new_set_data)\
+            .execute()
+        
+        if not set_response.data:
+            raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Nie udało się utworzyć zestawu")
+        
+        new_set = set_response.data[0]
+        new_set_id = new_set['id']
+        
+        print(f"✅ Set created: {new_set['name']}")
+        
+        # Dodaj fiszki
+        inserted_flashcards = []
+        if set_data.flashcards:
+            flashcards_to_insert = []
+            for fc in set_data.flashcards:
+                question = fc.question.strip()
+                answer = fc.answer.strip()
+                if question and answer:
+                    flashcards_to_insert.append({
+                        'question': question,
+                        'answer': answer,
+                        'set_id': new_set_id
+                    })
+            
+            if flashcards_to_insert:
+                flashcards_response = supabase.table('flashcards')\
+                    .insert(flashcards_to_insert)\
+                    .execute()
+                
+                if flashcards_response.data:
+                    inserted_flashcards = flashcards_response.data
+                    print(f"✅ Added {len(inserted_flashcards)} flashcards")
+                else:
+                    # Rollback
+                    supabase.table('flashcard_sets').delete().eq('id', new_set_id).execute()
+                    raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Nie udało się dodać fiszek")
+        
+        return {
+            'id': new_set['id'],
+            'name': new_set['name'],
+            'user_id': new_set['user_id'],
+            'created_at': new_set.get('created_at'),
+            'flashcards': inserted_flashcards
+        }
+        
+    except Exception as e:
+        if "duplicate key" in str(e).lower():
+            raise ValueError(f"Zestaw o nazwie '{set_name}' już istnieje.")
+        else:
+            raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Błąd: {str(e)}")
 
+def get_flashcard_set(supabase: Client, set_id: Union[str, int], user_id: str) -> Union[Dict[str, Any], None]:
+    response = supabase.table('flashcard_sets').select('*, flashcards(*)').eq('id', set_id).eq('user_id', user_id).execute()
+    if not response.data:
+        return None
+    return response.data[0]
 
-def delete_flashcard_set(db: Session, set_id: int, user_id: int):
-    db_set = db.query(models.FlashcardSet).filter(models.FlashcardSet.id == set_id).first()
+def get_flashcard_sets(supabase: Client, user_id: str):
+    response = supabase.table('flashcard_sets').select('*').eq('user_id', user_id).execute()
+    return response.data or []
 
-    if not db_set:
+def get_flashcard_for_editing(supabase: Client, card_id: Union[str, int], user_id: str):
+    response = supabase.table('flashcards').select('*, flashcard_sets!inner(user_id)').eq('id', card_id).execute()
+    if not response.data or response.data[0]['flashcard_sets']['user_id'] != user_id:
+        return None
+    return response.data[0]
+
+def update_flashcard(supabase: Client, card_id: Union[str, int], user_id: str, flashcard_data: dict):
+    card_to_edit = get_flashcard_for_editing(supabase, card_id, user_id)
+    if not card_to_edit:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Flashcard not found")
+
+    response = supabase.table('flashcards').update(flashcard_data).eq('id', card_id).execute()
+    if not response.data:
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Failed to update flashcard")
+    return response.data[0]
+
+def delete_flashcard_set(supabase: Client, set_id: Union[str, int], user_id: str):
+    response = supabase.table('flashcard_sets').select('*').eq('id', set_id).eq('user_id', user_id).execute()
+    if not response.data:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Flashcard set not found")
 
-    if db_set.user_id != user_id:
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Not authorized to delete this flashcard set")
-
-    db.delete(db_set)
-    db.commit()
+    delete_response = supabase.table('flashcard_sets').delete().eq('id', set_id).execute()
     return {"message": "Flashcard set deleted successfully"}

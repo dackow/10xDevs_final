@@ -1,97 +1,75 @@
-from datetime import timedelta
-
 from fastapi import APIRouter, Depends, HTTPException, status, Request, Form
-from fastapi.security import OAuth2PasswordRequestForm
-from fastapi.responses import HTMLResponse, RedirectResponse, Response
+from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
-from sqlalchemy.orm import Session
-from sqlalchemy.exc import IntegrityError
+from supabase import Client
 
-from app.crud import crud
-from app.schemas.schemas import Token, User, UserCreate
-from app.services import auth_service
-from app.config import ACCESS_TOKEN_EXPIRE_MINUTES
-from ..dependencies import get_db
+from app.dependencies import get_supabase_client
 
 router = APIRouter()
 templates = Jinja2Templates(directory="app/templates")
 
-@router.post("/users", response_model=User, status_code=status.HTTP_201_CREATED)
-def create_user(user: UserCreate, db: Session = Depends(get_db)):
-    db_user = crud.get_user_by_username(db, username=user.username)
-    if db_user:
-        raise HTTPException(status_code=400, detail="Username already registered")
-    try:
-        return crud.create_user(db=db, user=user)
-    except IntegrityError:
-        raise HTTPException(status_code=400, detail="Username already registered")
-
-@router.post("/token", response_model=Token)
-def login_for_access_token(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get_db)):
-    user = auth_service.authenticate_user(db, form_data.username, form_data.password)
-    if not user:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Incorrect username or password",
-            headers={"WWW-Authenticate": "Bearer"},
-        )
-    access_token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
-    access_token = auth_service.create_access_token(
-        data={"sub": user.username},
-        expires_delta=access_token_expires
-    )
-    return {"access_token": access_token, "token_type": "bearer"}
-
 @router.get("/login", response_class=HTMLResponse)
 async def login_page(request: Request):
-    return templates.TemplateResponse("login.html", {"request": request})
+    return templates.TemplateResponse(request=request, name="login.html")
 
 @router.post("/login")
-async def login_user(request: Request, username: str = Form(...), password: str = Form(...), db: Session = Depends(get_db)):
-    if not username or not password:
-        return templates.TemplateResponse("login.html", {"request": request, "error_message": "Nazwa użytkownika i hasło są wymagane."})
+async def login_user(
+    request: Request, 
+    email: str = Form(...),
+    password: str = Form(...), 
+    supabase: Client = Depends(get_supabase_client)
+):
+    if not email or not password:
+        return templates.TemplateResponse(request=request, name="login.html", context={"error_message": "Email i hasło są wymagane."})
     
-    user = auth_service.authenticate_user(db, username, password)
-    if not user:
-        return templates.TemplateResponse("login.html", {"request": request, "error_message": "Nieprawidłowa nazwa użytkownika lub hasło."})
-    
-    access_token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
-    access_token = auth_service.create_access_token(
-        data={"sub": user.username},
-        expires_delta=access_token_expires
-    )
-    
-    response = Response(status_code=status.HTTP_303_SEE_OTHER)
-    response.headers["Location"] = "/dashboard"
-    response.set_cookie(
-        key="access_token", 
-        value=f"Bearer {access_token}", 
-        httponly=True, 
-        max_age=int(access_token_expires.total_seconds()),
-        samesite="Lax", # or "Strict"
-        secure=False # Set to True in production with HTTPS
-    )
-    return response
+    try:
+        response = supabase.auth.sign_in_with_password({"email": email, "password": password})
+        
+        if not response.session or not response.session.access_token:
+            return templates.TemplateResponse(request=request, name="login.html", context={"error_message": "Błąd autoryzacji - brak tokenu."})
+        
+        access_token = response.session.access_token
+        
+        redirect_response = RedirectResponse(url="/dashboard", status_code=status.HTTP_303_SEE_OTHER)
+        redirect_response.set_cookie(
+            key="access_token", 
+            value=f"Bearer {access_token}", 
+            httponly=True, 
+            samesite="Lax",
+            secure=False,
+            max_age=3600
+        )
+        return redirect_response
+        
+    except Exception as e:
+        return templates.TemplateResponse(request=request, name="login.html", context={"error_message": "Wystąpił błąd podczas logowania."})
 
 @router.get("/register", response_class=HTMLResponse)
 async def register_page(request: Request):
-    return templates.TemplateResponse("register.html", {"request": request})
+    return templates.TemplateResponse(request=request, name="register.html")
 
 @router.post("/register", response_class=HTMLResponse)
-async def register_user(request: Request, username: str = Form(...), password: str = Form(...), db: Session = Depends(get_db)):
-    if not username or not password:
-        return templates.TemplateResponse("register.html", {"request": request, "error_message": "Nazwa użytkownika i hasło są wymagane."})
+async def register_user(
+    request: Request, 
+    email: str = Form(...),
+    password: str = Form(...), 
+    supabase: Client = Depends(get_supabase_client)
+):
+    if not email or not password:
+        return templates.TemplateResponse(request=request, name="register.html", context={"error_message": "Email i hasło są wymagane."})
     
     try:
-        user_in = UserCreate(username=username, password=password)
-        crud.create_user(db=db, user=user_in)
+        response = supabase.auth.sign_up({"email": email, "password": password})
         return RedirectResponse(url="/login", status_code=status.HTTP_303_SEE_OTHER)
-    except HTTPException as e:
-        return templates.TemplateResponse("register.html", {"request": request, "error_message": e.detail})
-    except IntegrityError:
-        return templates.TemplateResponse("register.html", {"request": request, "error_message": "Nazwa użytkownika jest już zajęta."})
+    except Exception as e:
+        return templates.TemplateResponse(request=request, name="register.html", context={"error_message": str(e)})
 
 @router.post("/logout")
-def logout_user():
-    # Logic for user logout
-    pass
+async def logout_user(supabase: Client = Depends(get_supabase_client)):
+    try:
+        supabase.auth.sign_out()
+    except Exception as e:
+        pass
+    response = RedirectResponse(url="/login", status_code=status.HTTP_303_SEE_OTHER)
+    response.delete_cookie("access_token")
+    return response

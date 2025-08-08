@@ -3,8 +3,8 @@ print("sys.path before imports:", sys.path)
 from fastapi import FastAPI, Request, Depends
 from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
-from sqlalchemy.orm import Session
-from app.dependencies import get_db, get_current_user
+from supabase import Client
+from app.dependencies import get_current_user, get_supabase_client
 from app.routers import auth, flashcards
 from app.crud.crud import get_flashcard_sets
 from app import models
@@ -23,8 +23,8 @@ def read_root():
 @app.get("/dashboard", response_class=HTMLResponse)
 async def dashboard(
     request: Request,
-    db: Session = Depends(get_db),
+    supabase: Client = Depends(get_supabase_client),
     current_user: models.User = Depends(get_current_user)
 ):
-    flashcard_sets = get_flashcard_sets(db, current_user.id)
+    flashcard_sets = get_flashcard_sets(supabase, current_user.id)
     return templates.TemplateResponse("dashboard.html", {"request": request, "user": current_user, "flashcard_sets": flashcard_sets})

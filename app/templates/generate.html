@@ -2,7 +2,7 @@
 
 {% block content %}
 <div class="container mt-4">
-    <h2 class="mb-4">Generuj Fiszki z AI</h2>
+    <h2 class="mb-4">Generuj Fiszki</h2>
 
     {% if error_message %}
     <div class="alert alert-danger" role="alert">
@@ -10,71 +10,56 @@
     </div>
     {% endif %}
 
-    <form id="generateForm" method="post" action="/generate">
-        <input type="hidden" name="action" value="generate">
+    {% if generated_flashcards %}
+    <form method="post" action="/generate">
+        <input type="hidden" name="action" value="save">
+        
         <div class="mb-3">
-            <label for="text" class="form-label">Tekst źródłowy</label>
-            <textarea class="form-control" id="text" name="text" rows="8" required placeholder="Wklej tekst, z którego chcesz wygenerować fiszki..."></textarea>
+            <label for="name" class="form-label">Nazwa zestawu</label>
+            <input type="text" class="form-control" id="name" name="name" required>
         </div>
-        <div class="mb-3">
-            <label for="count" class="form-label">Liczba fiszek do wygenerowania</label>
-            <select class="form-select" id="count" name="count">
-                <option value="5">5</option>
-                <option value="10">10</option>
-                <option value="15">15</option>
-            </select>
+
+        <h4>Wygenerowane fiszki:</h4>
+        {% for flashcard in generated_flashcards %}
+        <div class="card mb-3">
+            <div class="card-body">
+                <div class="mb-3">
+                    <label class="form-label">Pytanie</label>
+                    <textarea class="form-control" name="questions" rows="2" required>{{ flashcard.question }}</textarea>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Odpowiedź</label>
+                    <textarea class="form-control" name="answers" rows="2" required>{{ flashcard.answer }}</textarea>
+                </div>
+            </div>
         </div>
-        <button type="submit" class="btn btn-primary">Generuj</button>
+        {% endfor %}
+
+        <button type="submit" class="btn btn-success">Zapisz zestaw</button>
+        <a href="/dashboard" class="btn btn-secondary">Anuluj</a>
     </form>
 
-    <!-- Nakładka Ładowania -->
-    <div id="loadingOverlay" class="d-none justify-content-center align-items-center" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(255, 255, 255, 0.8); z-index: 1050;">
-        <div class="text-center">
-            <div class="spinner-border text-primary" role="status">
-                <span class="visually-hidden">Loading...</span>
-            </div>
-            <p class="mt-2">Chwileczkę, tworzymy magię!</p>
-        </div>
-    </div>
-
-    {% if generated_flashcards %}
-    <hr class="my-4">
-    <h3 class="mb-3">Wygenerowane Fiszki</h3>
-    <ul class="list-group mb-4">
-        {% for card in generated_flashcards %}
-        <li class="list-group-item">
-            <strong>Pytanie:</strong> {{ card.question }}<br>
-            <strong>Odpowiedź:</strong> {{ card.answer }}
-        </li>
-        {% endfor %}
-    </ul>
-
-    <form id="saveForm" method="post" action="/generate">
-        <input type="hidden" name="action" value="save">
+    {% else %}
+    <form method="post" action="/generate">
+        <input type="hidden" name="action" value="generate">
+        
         <div class="mb-3">
-            <label for="setName" class="form-label">Nazwa zestawu</label>
-            <input type="text" class="form-control" id="setName" name="name" required placeholder="Podaj nazwę dla nowego zestawu fiszek">
+            <label for="text" class="form-label">Tekst źródłowy</label>
+            <textarea class="form-control" id="text" name="text" rows="10" required placeholder="Wklej tutaj tekst, z którego chcesz wygenerować fiszki..."></textarea>
         </div>
-        {% for card in generated_flashcards %}
-        <input type="hidden" name="questions" value="{{ card.question }}">
-        <input type="hidden" name="answers" value="{{ card.answer }}">
-        {% endfor %}
-        <button type="submit" class="btn btn-success">Zapisz zestaw</button>
+
+        <div class="mb-3">
+            <label for="count" class="form-label">Ilość fiszek</label>
+            <select class="form-select" id="count" name="count" required>
+                <option value="5">Mało (5 fiszek)</option>
+                <option value="10" selected>Średnio (10 fiszek)</option>
+                <option value="15">Dużo (15 fiszek)</option>
+            </select>
+        </div>
+
+        <button type="submit" class="btn btn-primary">Generuj fiszki</button>
+        <a href="/dashboard" class="btn btn-secondary">Powrót</a>
     </form>
     {% endif %}
 </div>
-
-<script>
-    document.addEventListener('DOMContentLoaded', function () {
-        var generateForm = document.getElementById('generateForm');
-        var loadingOverlay = document.getElementById('loadingOverlay');
-
-        if (generateForm) {
-            generateForm.addEventListener('submit', function () {
-                loadingOverlay.classList.remove('d-none');
-                loadingOverlay.classList.add('d-flex');
-            });
-        }
-    });
-</script>
 {% endblock %}

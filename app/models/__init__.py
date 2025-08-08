@@ -1,1 +1,1 @@
-from .models import User, FlashcardSet, Flashcard
+from .models import User, FlashcardSet, Flashcard, Base

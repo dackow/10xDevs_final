@@ -21,10 +21,10 @@ class FlashcardUpdate(FlashcardBase):
 
 class Flashcard(FlashcardBase):
     """Pelny schemat fiszki, uzywany w odpowiedziach API (DTO)."""
-    id: int
-    set_id: int
-    created_at: datetime
-    updated_at: datetime
+    id: Optional[int] = None
+    set_id: Optional[int] = None
+    created_at: datetime = datetime.now()
+    updated_at: datetime = datetime.now()
 
     model_config = ConfigDict(from_attributes=True)
 

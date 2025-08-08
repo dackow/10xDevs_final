@@ -23,7 +23,7 @@ The technology stack was chosen with a focus on simplicity, speed of MVP impleme
 | Component | Technology | Justification |
 | :--- | :--- | :--- |
 | **Backend Framework** | FastAPI | Speed, data validation, auto-generated API documentation. |
-| **Database** | SQLite | Simplicity, no configuration needed, perfect for an MVP. |
+| **Database** | Supabase (PostgreSQL) | Backend as a Service with a managed PostgreSQL database, authentication, and storage. |
 | **ORM** | SQLAlchemy | Industry standard, safe interaction with the database. |
 | **HTTP Client (for Ollama)**| HTTPX | Support for asynchronous operations in FastAPI. |
 | **HTML Template Engine** | Jinja2 | Simple server-side HTML generation. |

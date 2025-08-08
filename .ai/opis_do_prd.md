@@ -12,7 +12,7 @@ Stworzenie w ciągu 28 godzin w pełni funkcjonalnej aplikacji webowej, która s
 
 **Stos Technologiczny:**
 *   **Backend:** Python (Flask lub FastAPI).
-*   **Baza Danych:** SQLite.
+*   **Baza Danych:** Supabase (PostgreSQL).
 *   **Frontend:** Podstawowy HTML z formularzami.
 *   **AI:** Model Mistral dostępny przez API z Ollamy.
 
