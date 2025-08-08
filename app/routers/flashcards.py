@@ -4,7 +4,7 @@ from fastapi import APIRouter, Depends, HTTPException, status, Query, Request, F
 from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
 from supabase import Client
-from typing import List, Optional
+from typing import List, Optional, Any
 
 from app.crud.crud import (
     update_flashcard, 
@@ -24,23 +24,26 @@ from app.schemas.schemas import (
     FlashcardCreate
 )
 from app.dependencies import get_supabase_client, get_current_user
-from app import models
 
 router = APIRouter()
 templates = Jinja2Templates(directory="app/templates")
 
 @router.get("/sets/{set_id}", response_class=HTMLResponse)
 async def set_detail_view(
-    set_id: UUID,  # Zmiana z int na UUID
+    set_id: UUID,
     request: Request,
     supabase: Client = Depends(get_supabase_client),
-    current_user: models.User = Depends(get_current_user)
+    current_user: Any = Depends(get_current_user)  # ✅ ZMIENIONO typ
 ):
     """Wyświetla szczegóły zestawu fiszek z możliwością nauki"""
     try:
+        # ✅ DEBUGOWANIE - sprawdź user_id
+        print(f"🔍 DEBUG - current_user object: {current_user}")
+        print(f"🔍 DEBUG - current_user.id: {current_user.id}")
+        
         db_set = get_flashcard_set(
             supabase=supabase, 
-            set_id=str(set_id),  # Konwersja UUID -> string
+            set_id=str(set_id),
             user_id=current_user.id
         )
         
@@ -78,10 +81,10 @@ async def set_detail_view(
 
 @router.get("/cards/{card_id}/edit", response_class=HTMLResponse)
 async def edit_flashcard_view(
-    card_id: UUID,  # Zmiana z int na UUID
+    card_id: UUID,
     request: Request,
     supabase: Client = Depends(get_supabase_client),
-    current_user: models.User = Depends(get_current_user)
+    current_user: Any = Depends(get_current_user)  # ✅ ZMIENIONO typ
 ):
     """Formularz edycji fiszki"""
     try:
@@ -112,12 +115,12 @@ async def edit_flashcard_view(
 
 @router.post("/cards/{card_id}/edit", response_class=HTMLResponse)
 async def edit_flashcard_post(
-    card_id: UUID,  # Zmiana z int na UUID
+    card_id: UUID,
     request: Request,
     question: str = Form(...),
     answer: str = Form(...),
     supabase: Client = Depends(get_supabase_client),
-    current_user: models.User = Depends(get_current_user)
+    current_user: Any = Depends(get_current_user)  # ✅ ZMIENIONO typ
 ):
     """Zapisuje zmiany w fiszce"""
     try:
@@ -169,11 +172,10 @@ async def edit_flashcard_post(
             status_code=e.status_code
         )
 
-# Reszta kodu bez zmian...
 @router.get("/generate", response_class=HTMLResponse)
 async def handle_generate_view_get(
     request: Request,
-    current_user: models.User = Depends(get_current_user)
+    current_user: Any = Depends(get_current_user)  # ✅ ZMIENIONO typ
 ):
     return templates.TemplateResponse(
         "generate.html", 
@@ -184,9 +186,14 @@ async def handle_generate_view_get(
 async def handle_generate_view_post(
     request: Request,
     supabase: Client = Depends(get_supabase_client),
-    current_user: models.User = Depends(get_current_user)
+    current_user: Any = Depends(get_current_user)  # ✅ ZMIENIONO typ
 ):
     try:
+        # ✅ DEBUGOWANIE - sprawdź user_id na początku
+        print(f"🔍 DEBUG POST /generate - current_user: {current_user}")
+        print(f"🔍 DEBUG POST /generate - current_user.id: {current_user.id}")
+        print(f"🔍 DEBUG POST /generate - user_id type: {type(current_user.id)}")
+        
         form_data = await request.form()
         action = form_data.get("action")
 
@@ -281,6 +288,9 @@ async def handle_generate_view_post(
                 )
 
             try:
+                # ✅ DEBUGOWANIE przed wywołaniem create_flashcard_set
+                print(f"🔍 DEBUG przed create_flashcard_set - user_id: {current_user.id}")
+                
                 set_data = FlashcardSetCreate(name=set_name, flashcards=flashcards_to_create)
                 created_set = create_flashcard_set(
                     supabase=supabase, 
@@ -310,6 +320,7 @@ async def handle_generate_view_post(
                 )
 
     except Exception as e:
+        print(f"❌ UNEXPECTED ERROR in POST /generate: {e}")
         return templates.TemplateResponse(
             "generate.html", 
             {
@@ -321,9 +332,9 @@ async def handle_generate_view_post(
 
 @router.post("/sets/{set_id}/delete")
 async def delete_flashcard_set_endpoint(
-    set_id: UUID,  # Zmiana z int na UUID
+    set_id: UUID,
     supabase: Client = Depends(get_supabase_client),
-    current_user: models.User = Depends(get_current_user)
+    current_user: Any = Depends(get_current_user)  # ✅ ZMIENIONO typ
 ):
     try:
         delete_flashcard_set(supabase=supabase, set_id=str(set_id), user_id=current_user.id)
@@ -331,8 +342,9 @@ async def delete_flashcard_set_endpoint(
             url="/dashboard", 
             status_code=status.HTTP_303_SEE_OTHER
         )
-    except HTTPException:
+    except HTTPException as e:
+        # Przekieruj na dashboard z informacją o błędzie
         return RedirectResponse(
-            url="/dashboard", 
+            url=f"/dashboard?error_message={e.detail}", 
             status_code=status.HTTP_303_SEE_OTHER
         )

@@ -5,16 +5,22 @@ from typing import Union, Dict, Any, List
 import uuid
 
 def create_flashcard_set(supabase: Client, set_data: FlashcardSetCreate, user_id: str) -> Dict[str, Any]:
-    """Uproszczona wersja bez obsługi RLS"""
+    # ✅ ROZSZERZONE DEBUGOWANIE
+    print(f"🔍 DEBUG create_flashcard_set - Received user_id: '{user_id}'")
+    print(f"🔍 DEBUG create_flashcard_set - user_id type: {type(user_id)}")
+    print(f"🔍 DEBUG create_flashcard_set - user_id is None: {user_id is None}")
+    print(f"🔍 DEBUG create_flashcard_set - user_id is empty string: {user_id == ''}")
+    print(f"🔍 DEBUG create_flashcard_set - set_data.name: '{set_data.name}'")
     
     if not user_id:
+        print("❌ user_id is empty or None!")
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Brak user_id")
     
     set_name = set_data.name.strip()
     if not set_name:
         raise ValueError("Nazwa zestawu nie może być pusta.")
     
-    print(f"🔍 Creating set '{set_name}' for user: {user_id}")
+    print(f"📋 Creating set '{set_name}' for user: {user_id}")
     
     # Sprawdź duplikaty
     existing_set = supabase.table('flashcard_sets')\
@@ -26,16 +32,20 @@ def create_flashcard_set(supabase: Client, set_data: FlashcardSetCreate, user_id
     if existing_set.data:
         raise ValueError(f"Zestaw o nazwie '{set_name}' już istnieje.")
     
-    # INSERT zestawu
+    # ✅ DEBUGOWANIE DANYCH DO WSTAWIENIA
     new_set_data = {
         'name': set_name,
         'user_id': user_id
     }
+    print(f"🔍 DEBUG - Data to insert: {new_set_data}")
     
     try:
         set_response = supabase.table('flashcard_sets')\
             .insert(new_set_data)\
             .execute()
+        
+        # ✅ DEBUGOWANIE ODPOWIEDZI
+        print(f"🔍 DEBUG - Supabase insert response: {set_response}")
         
         if not set_response.data:
             raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Nie udało się utworzyć zestawu")
@@ -81,6 +91,7 @@ def create_flashcard_set(supabase: Client, set_data: FlashcardSetCreate, user_id
         }
         
     except Exception as e:
+        print(f"❌ ERROR in create_flashcard_set: {e}")
         if "duplicate key" in str(e).lower():
             raise ValueError(f"Zestaw o nazwie '{set_name}' już istnieje.")
         else:
@@ -118,4 +129,8 @@ def delete_flashcard_set(supabase: Client, set_id: Union[str, int], user_id: str
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Flashcard set not found")
 
     delete_response = supabase.table('flashcard_sets').delete().eq('id', set_id).execute()
+    
+    if not delete_response.data:
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Nie udało się usunąć zestawu fiszek.")
+        
     return {"message": "Flashcard set deleted successfully"}

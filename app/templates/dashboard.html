@@ -57,16 +57,47 @@
 <script>
     document.addEventListener('DOMContentLoaded', function () {
         var deleteConfirmationModal = document.getElementById('deleteConfirmationModal');
+        var deleteForm = document.getElementById('deleteForm');
+
         deleteConfirmationModal.addEventListener('show.bs.modal', function (event) {
             var button = event.relatedTarget; // Przycisk, który wywołał modal
             var setId = button.getAttribute('data-set-id');
             var setName = button.getAttribute('data-set-name');
 
             var modalSetName = deleteConfirmationModal.querySelector('#modalSetName');
-            var deleteForm = deleteConfirmationModal.querySelector('#deleteForm');
-
             modalSetName.textContent = setName;
-            deleteForm.action = `/sets/${setId}/delete`;
+            deleteForm.action = `/sets/${setId}/delete`; // Ustawienie akcji formularza
+        });
+
+        deleteForm.addEventListener('submit', async function (event) {
+            event.preventDefault(); // Zapobiegaj domyślnej wysyłce formularza
+
+            const formAction = this.action;
+
+            try {
+                const response = await fetch(formAction, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded'
+                    },
+                    // body: new URLSearchParams(new FormData(this)).toString() // Jeśli formularz ma inne pola
+                });
+
+                if (response.redirected) {
+                    window.location.href = response.url; // Przekieruj przeglądarkę
+                } else if (!response.ok) {
+                    // Obsługa błędów, jeśli backend zwróci błąd HTTP (np. 404, 500)
+                    const errorText = await response.text();
+                    alert(`Błąd podczas usuwania: ${errorText}`);
+                } else {
+                    // Jeśli sukces, ale bez przekierowania (np. API zwraca 200 OK)
+                    // Możesz odświeżyć listę zestawów lub usunąć element z DOM
+                    window.location.reload(); // Najprostsze rozwiązanie
+                }
+            } catch (error) {
+                console.error('Błąd sieci lub serwera:', error);
+                alert('Wystąpił błąd sieci lub serwera podczas usuwania zestawu.');
+            }
         });
     });
 </script>

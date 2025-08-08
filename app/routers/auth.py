@@ -36,7 +36,7 @@ async def login_user(
             value=f"Bearer {access_token}", 
             httponly=True, 
             samesite="Lax",
-            secure=False,
+            secure=True,
             max_age=3600
         )
         return redirect_response
