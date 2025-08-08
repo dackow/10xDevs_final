@@ -40,3 +40,5 @@ Na podstawie analizy dokumentu wymagań produktu (PRD), w szczególności z naci
 | **Silnik Szablonów HTML**  | Jinja2      | Proste generowanie HTML po stronie serwera.        |
 | **Framework CSS**          | Bootstrap   | Szybkie budowanie estetycznego interfejsu.         |
 | **Serwer Aplikacji**       | Uvicorn     | Standardowy serwer dla FastAPI.                    |
+| **Testy Jednostkowe/Integracyjne** | Pytest, FastAPI TestClient | Do testowania logiki biznesowej i endpointów API. |
+| **Testy E2E (Przyszłość)** | Playwright / Selenium | Do automatyzacji testów interfejsu użytkownika w przeglądarce. |
