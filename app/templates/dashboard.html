@@ -2,7 +2,7 @@
 
 {% block content %}
 <div class="container mt-4">
-    <h1 class="mb-4">Witaj, {{ user.username }}!</h1>
+    <h1 class="mb-4">Witaj, {{ user.email }}!</h1>
 
     {% if notification %}
     <div class="alert alert-success" role="alert">
@@ -54,51 +54,60 @@
     </div>
 </div>
 
+<!-- ✅ POPRAWIONY JAVASCRIPT -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+
 <script>
-    document.addEventListener('DOMContentLoaded', function () {
-        var deleteConfirmationModal = document.getElementById('deleteConfirmationModal');
-        var deleteForm = document.getElementById('deleteForm');
+document.addEventListener('DOMContentLoaded', function () {
+    console.log('🔧 Dashboard JavaScript loaded');
+    
+    var deleteConfirmationModal = document.getElementById('deleteConfirmationModal');
+    var deleteForm = document.getElementById('deleteForm');
 
-        deleteConfirmationModal.addEventListener('show.bs.modal', function (event) {
-            var button = event.relatedTarget; // Przycisk, który wywołał modal
-            var setId = button.getAttribute('data-set-id');
-            var setName = button.getAttribute('data-set-name');
+    if (!deleteConfirmationModal || !deleteForm) {
+        console.error('❌ Modal or form not found');
+        return;
+    }
 
-            var modalSetName = deleteConfirmationModal.querySelector('#modalSetName');
+    // Event listener dla pokazania modala
+    deleteConfirmationModal.addEventListener('show.bs.modal', function (event) {
+        console.log('🔧 Modal opening...');
+        
+        var button = event.relatedTarget; // Przycisk, który wywołał modal
+        if (!button) {
+            console.error('❌ No button found');
+            return;
+        }
+        
+        var setId = button.getAttribute('data-set-id');
+        var setName = button.getAttribute('data-set-name');
+        
+        console.log('🔧 Set ID:', setId, 'Set Name:', setName);
+
+        var modalSetName = deleteConfirmationModal.querySelector('#modalSetName');
+        if (modalSetName) {
             modalSetName.textContent = setName;
-            deleteForm.action = `/sets/${setId}/delete`; // Ustawienie akcji formularza
-        });
-
-        deleteForm.addEventListener('submit', async function (event) {
-            event.preventDefault(); // Zapobiegaj domyślnej wysyłce formularza
-
-            const formAction = this.action;
-
-            try {
-                const response = await fetch(formAction, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/x-www-form-urlencoded'
-                    },
-                    // body: new URLSearchParams(new FormData(this)).toString() // Jeśli formularz ma inne pola
-                });
-
-                if (response.redirected) {
-                    window.location.href = response.url; // Przekieruj przeglądarkę
-                } else if (!response.ok) {
-                    // Obsługa błędów, jeśli backend zwróci błąd HTTP (np. 404, 500)
-                    const errorText = await response.text();
-                    alert(`Błąd podczas usuwania: ${errorText}`);
-                } else {
-                    // Jeśli sukces, ale bez przekierowania (np. API zwraca 200 OK)
-                    // Możesz odświeżyć listę zestawów lub usunąć element z DOM
-                    window.location.reload(); // Najprostsze rozwiązanie
-                }
-            } catch (error) {
-                console.error('Błąd sieci lub serwera:', error);
-                alert('Wystąpił błąd sieci lub serwera podczas usuwania zestawu.');
-            }
-        });
+        }
+        
+        // Ustawienie akcji formularza
+        deleteForm.action = `/sets/${setId}/delete`;
+        console.log('🔧 Form action set to:', deleteForm.action);
     });
+
+    // ✅ UPROSZCZONY EVENT LISTENER DLA FORMULARZA
+    deleteForm.addEventListener('submit', function (event) {
+        console.log('🗑️ Form submitted to:', this.action);
+        
+        // Pozwól na normalny submit formularza - usuń preventDefault()
+        // event.preventDefault(); // ← USUNIĘTE!
+        
+        // Opcjonalnie: pokazuj loading state
+        var submitButton = this.querySelector('button[type="submit"]');
+        if (submitButton) {
+            submitButton.disabled = true;
+            submitButton.textContent = 'Usuwanie...';
+        }
+    });
+});
 </script>
 {% endblock %}

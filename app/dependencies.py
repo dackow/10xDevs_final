@@ -27,13 +27,7 @@ def get_current_user(request: Request, supabase: Client = Depends(get_supabase_c
         if user_response.user is None:
             raise credentials_exception
         
-        # ✅ DEBUGOWANIE - sprawdź strukturę użytkownika Supabase
-        print(f"🔍 DEBUG - Supabase user: {user_response.user}")
-        print(f"🔍 DEBUG - User ID: {user_response.user.id}")
-        print(f"🔍 DEBUG - User attributes: {dir(user_response.user)}")
-        
         return user_response.user
         
     except Exception as e:
-        print(f"❌ Error in get_current_user: {e}")
         raise credentials_exception

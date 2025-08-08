@@ -1,5 +1,4 @@
 import sys
-print("sys.path before imports:", sys.path)
 from fastapi import FastAPI, Request, Depends
 from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
@@ -24,11 +23,7 @@ def read_root():
 async def dashboard(
     request: Request,
     supabase: Client = Depends(get_supabase_client),
-    current_user: Any = Depends(get_current_user)  # ✅ ZMIENIONO typ
+    current_user: Any = Depends(get_current_user)
 ):
-    # ✅ DEBUGOWANIE
-    print(f"🔍 DEBUG dashboard - current_user: {current_user}")
-    print(f"🔍 DEBUG dashboard - current_user.id: {current_user.id}")
-    
     flashcard_sets = get_flashcard_sets(supabase, current_user.id)
     return templates.TemplateResponse("dashboard.html", {"request": request, "user": current_user, "flashcard_sets": flashcard_sets})
