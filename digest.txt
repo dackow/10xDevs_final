@@ -297,13 +297,14 @@ FILE: app/dependencies.py
 from fastapi import Depends, HTTPException, status, Request
 from app.config import SUPABASE_URL, SUPABASE_KEY
 from supabase import create_client, Client
+from typing import Any
 
 def get_supabase_client() -> Client:
     if not SUPABASE_URL or not SUPABASE_KEY:
         raise Exception("Supabase configuration missing")
     return create_client(SUPABASE_URL, SUPABASE_KEY)
 
-def get_current_user(request: Request, supabase: Client = Depends(get_supabase_client)):
+def get_current_user(request: Request, supabase: Client = Depends(get_supabase_client)) -> Any:
     credentials_exception = HTTPException(
         status_code=status.HTTP_401_UNAUTHORIZED,
         detail="Could not validate credentials",
@@ -321,9 +322,16 @@ def get_current_user(request: Request, supabase: Client = Depends(get_supabase_c
         user_response = supabase.auth.get_user(token)
         if user_response.user is None:
             raise credentials_exception
+        
+        # âś… DEBUGOWANIE - sprawdĹş strukturÄ™ uĹĽytkownika Supabase
+        print(f"đź”Ť DEBUG - Supabase user: {user_response.user}")
+        print(f"đź”Ť DEBUG - User ID: {user_response.user.id}")
+        print(f"đź”Ť DEBUG - User attributes: {dir(user_response.user)}")
+        
         return user_response.user
         
     except Exception as e:
+        print(f"âťŚ Error in get_current_user: {e}")
         raise credentials_exception
 
 
@@ -340,7 +348,7 @@ from supabase import Client
 from app.dependencies import get_current_user, get_supabase_client
 from app.routers import auth, flashcards
 from app.crud.crud import get_flashcard_sets
-from app import models
+from typing import Any
 
 app = FastAPI()
 
@@ -357,8 +365,12 @@ def read_root():
 async def dashboard(
     request: Request,
     supabase: Client = Depends(get_supabase_client),
-    current_user: models.User = Depends(get_current_user)
+    current_user: Any = Depends(get_current_user)  # âś… ZMIENIONO typ
 ):
+    # âś… DEBUGOWANIE
+    print(f"đź”Ť DEBUG dashboard - current_user: {current_user}")
+    print(f"đź”Ť DEBUG dashboard - current_user.id: {current_user.id}")
+    
     flashcard_sets = get_flashcard_sets(supabase, current_user.id)
     return templates.TemplateResponse("dashboard.html", {"request": request, "user": current_user, "flashcard_sets": flashcard_sets})
 
@@ -374,16 +386,22 @@ from typing import Union, Dict, Any, List
 import uuid
 
 def create_flashcard_set(supabase: Client, set_data: FlashcardSetCreate, user_id: str) -> Dict[str, Any]:
-    """Uproszczona wersja bez obsĹ‚ugi RLS"""
+    # âś… ROZSZERZONE DEBUGOWANIE
+    print(f"đź”Ť DEBUG create_flashcard_set - Received user_id: '{user_id}'")
+    print(f"đź”Ť DEBUG create_flashcard_set - user_id type: {type(user_id)}")
+    print(f"đź”Ť DEBUG create_flashcard_set - user_id is None: {user_id is None}")
+    print(f"đź”Ť DEBUG create_flashcard_set - user_id is empty string: {user_id == ''}")
+    print(f"đź”Ť DEBUG create_flashcard_set - set_data.name: '{set_data.name}'")
     
     if not user_id:
+        print("âťŚ user_id is empty or None!")
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Brak user_id")
     
     set_name = set_data.name.strip()
     if not set_name:
         raise ValueError("Nazwa zestawu nie moĹĽe byÄ‡ pusta.")
     
-    print(f"đź”Ť Creating set '{set_name}' for user: {user_id}")
+    print(f"đź“‹ Creating set '{set_name}' for user: {user_id}")
     
     # SprawdĹş duplikaty
     existing_set = supabase.table('flashcard_sets')\
@@ -395,16 +413,20 @@ def create_flashcard_set(supabase: Client, set_data: FlashcardSetCreate, user_id
     if existing_set.data:
         raise ValueError(f"Zestaw o nazwie '{set_name}' juĹĽ istnieje.")
     
-    # INSERT zestawu
+    # âś… DEBUGOWANIE DANYCH DO WSTAWIENIA
     new_set_data = {
         'name': set_name,
         'user_id': user_id
     }
+    print(f"đź”Ť DEBUG - Data to insert: {new_set_data}")
     
     try:
         set_response = supabase.table('flashcard_sets')\
             .insert(new_set_data)\
             .execute()
+        
+        # âś… DEBUGOWANIE ODPOWIEDZI
+        print(f"đź”Ť DEBUG - Supabase insert response: {set_response}")
         
         if not set_response.data:
             raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Nie udaĹ‚o siÄ™ utworzyÄ‡ zestawu")
@@ -450,6 +472,7 @@ def create_flashcard_set(supabase: Client, set_data: FlashcardSetCreate, user_id
         }
         
     except Exception as e:
+        print(f"âťŚ ERROR in create_flashcard_set: {e}")
         if "duplicate key" in str(e).lower():
             raise ValueError(f"Zestaw o nazwie '{set_name}' juĹĽ istnieje.")
         else:
@@ -487,6 +510,10 @@ def delete_flashcard_set(supabase: Client, set_id: Union[str, int], user_id: str
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Flashcard set not found")
 
     delete_response = supabase.table('flashcard_sets').delete().eq('id', set_id).execute()
+    
+    if not delete_response.data:
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Nie udaĹ‚o siÄ™ usunÄ…Ä‡ zestawu fiszek.")
+        
     return {"message": "Flashcard set deleted successfully"}
 
 
@@ -580,7 +607,7 @@ async def login_user(
             value=f"Bearer {access_token}", 
             httponly=True, 
             samesite="Lax",
-            secure=False,
+            secure=True,
             max_age=3600
         )
         return redirect_response
@@ -628,7 +655,7 @@ from fastapi import APIRouter, Depends, HTTPException, status, Query, Request, F
 from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
 from supabase import Client
-from typing import List, Optional
+from typing import List, Optional, Any
 
 from app.crud.crud import (
     update_flashcard, 
@@ -648,23 +675,26 @@ from app.schemas.schemas import (
     FlashcardCreate
 )
 from app.dependencies import get_supabase_client, get_current_user
-from app import models
 
 router = APIRouter()
 templates = Jinja2Templates(directory="app/templates")
 
 @router.get("/sets/{set_id}", response_class=HTMLResponse)
 async def set_detail_view(
-    set_id: UUID,  # Zmiana z int na UUID
+    set_id: UUID,
     request: Request,
     supabase: Client = Depends(get_supabase_client),
-    current_user: models.User = Depends(get_current_user)
+    current_user: Any = Depends(get_current_user)  # âś… ZMIENIONO typ
 ):
     """WyĹ›wietla szczegĂłĹ‚y zestawu fiszek z moĹĽliwoĹ›ciÄ… nauki"""
     try:
+        # âś… DEBUGOWANIE - sprawdĹş user_id
+        print(f"đź”Ť DEBUG - current_user object: {current_user}")
+        print(f"đź”Ť DEBUG - current_user.id: {current_user.id}")
+        
         db_set = get_flashcard_set(
             supabase=supabase, 
-            set_id=str(set_id),  # Konwersja UUID -> string
+            set_id=str(set_id),
             user_id=current_user.id
         )
         
@@ -702,10 +732,10 @@ async def set_detail_view(
 
 @router.get("/cards/{card_id}/edit", response_class=HTMLResponse)
 async def edit_flashcard_view(
-    card_id: UUID,  # Zmiana z int na UUID
+    card_id: UUID,
     request: Request,
     supabase: Client = Depends(get_supabase_client),
-    current_user: models.User = Depends(get_current_user)
+    current_user: Any = Depends(get_current_user)  # âś… ZMIENIONO typ
 ):
     """Formularz edycji fiszki"""
     try:
@@ -736,12 +766,12 @@ async def edit_flashcard_view(
 
 @router.post("/cards/{card_id}/edit", response_class=HTMLResponse)
 async def edit_flashcard_post(
-    card_id: UUID,  # Zmiana z int na UUID
+    card_id: UUID,
     request: Request,
     question: str = Form(...),
     answer: str = Form(...),
     supabase: Client = Depends(get_supabase_client),
-    current_user: models.User = Depends(get_current_user)
+    current_user: Any = Depends(get_current_user)  # âś… ZMIENIONO typ
 ):
     """Zapisuje zmiany w fiszce"""
     try:
@@ -793,11 +823,10 @@ async def edit_flashcard_post(
             status_code=e.status_code
         )
 
-# Reszta kodu bez zmian...
 @router.get("/generate", response_class=HTMLResponse)
 async def handle_generate_view_get(
     request: Request,
-    current_user: models.User = Depends(get_current_user)
+    current_user: Any = Depends(get_current_user)  # âś… ZMIENIONO typ
 ):
     return templates.TemplateResponse(
         "generate.html", 
@@ -808,9 +837,14 @@ async def handle_generate_view_get(
 async def handle_generate_view_post(
     request: Request,
     supabase: Client = Depends(get_supabase_client),
-    current_user: models.User = Depends(get_current_user)
+    current_user: Any = Depends(get_current_user)  # âś… ZMIENIONO typ
 ):
     try:
+        # âś… DEBUGOWANIE - sprawdĹş user_id na poczÄ…tku
+        print(f"đź”Ť DEBUG POST /generate - current_user: {current_user}")
+        print(f"đź”Ť DEBUG POST /generate - current_user.id: {current_user.id}")
+        print(f"đź”Ť DEBUG POST /generate - user_id type: {type(current_user.id)}")
+        
         form_data = await request.form()
         action = form_data.get("action")
 
@@ -905,6 +939,9 @@ async def handle_generate_view_post(
                 )
 
             try:
+                # âś… DEBUGOWANIE przed wywoĹ‚aniem create_flashcard_set
+                print(f"đź”Ť DEBUG przed create_flashcard_set - user_id: {current_user.id}")
+                
                 set_data = FlashcardSetCreate(name=set_name, flashcards=flashcards_to_create)
                 created_set = create_flashcard_set(
                     supabase=supabase, 
@@ -934,6 +971,7 @@ async def handle_generate_view_post(
                 )
 
     except Exception as e:
+        print(f"âťŚ UNEXPECTED ERROR in POST /generate: {e}")
         return templates.TemplateResponse(
             "generate.html", 
             {
@@ -945,9 +983,9 @@ async def handle_generate_view_post(
 
 @router.post("/sets/{set_id}/delete")
 async def delete_flashcard_set_endpoint(
-    set_id: UUID,  # Zmiana z int na UUID
+    set_id: UUID,
     supabase: Client = Depends(get_supabase_client),
-    current_user: models.User = Depends(get_current_user)
+    current_user: Any = Depends(get_current_user)  # âś… ZMIENIONO typ
 ):
     try:
         delete_flashcard_set(supabase=supabase, set_id=str(set_id), user_id=current_user.id)
@@ -955,9 +993,10 @@ async def delete_flashcard_set_endpoint(
             url="/dashboard", 
             status_code=status.HTTP_303_SEE_OTHER
         )
-    except HTTPException:
+    except HTTPException as e:
+        # Przekieruj na dashboard z informacjÄ… o bĹ‚Ä™dzie
         return RedirectResponse(
-            url="/dashboard", 
+            url=f"/dashboard?error_message={e.detail}", 
             status_code=status.HTTP_303_SEE_OTHER
         )
 
@@ -1316,16 +1355,47 @@ FILE: app/templates/dashboard.html
 <script>
     document.addEventListener('DOMContentLoaded', function () {
         var deleteConfirmationModal = document.getElementById('deleteConfirmationModal');
+        var deleteForm = document.getElementById('deleteForm');
+
         deleteConfirmationModal.addEventListener('show.bs.modal', function (event) {
             var button = event.relatedTarget; // Przycisk, ktĂłry wywoĹ‚aĹ‚ modal
             var setId = button.getAttribute('data-set-id');
             var setName = button.getAttribute('data-set-name');
 
             var modalSetName = deleteConfirmationModal.querySelector('#modalSetName');
-            var deleteForm = deleteConfirmationModal.querySelector('#deleteForm');
-
             modalSetName.textContent = setName;
-            deleteForm.action = `/sets/${setId}/delete`;
+            deleteForm.action = `/sets/${setId}/delete`; // Ustawienie akcji formularza
+        });
+
+        deleteForm.addEventListener('submit', async function (event) {
+            event.preventDefault(); // Zapobiegaj domyĹ›lnej wysyĹ‚ce formularza
+
+            const formAction = this.action;
+
+            try {
+                const response = await fetch(formAction, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded'
+                    },
+                    // body: new URLSearchParams(new FormData(this)).toString() // JeĹ›li formularz ma inne pola
+                });
+
+                if (response.redirected) {
+                    window.location.href = response.url; // Przekieruj przeglÄ…darkÄ™
+                } else if (!response.ok) {
+                    // ObsĹ‚uga bĹ‚Ä™dĂłw, jeĹ›li backend zwrĂłci bĹ‚Ä…d HTTP (np. 404, 500)
+                    const errorText = await response.text();
+                    alert(`BĹ‚Ä…d podczas usuwania: ${errorText}`);
+                } else {
+                    // JeĹ›li sukces, ale bez przekierowania (np. API zwraca 200 OK)
+                    // MoĹĽesz odĹ›wieĹĽyÄ‡ listÄ™ zestawĂłw lub usunÄ…Ä‡ element z DOM
+                    window.location.reload(); // Najprostsze rozwiÄ…zanie
+                }
+            } catch (error) {
+                console.error('BĹ‚Ä…d sieci lub serwera:', error);
+                alert('WystÄ…piĹ‚ bĹ‚Ä…d sieci lub serwera podczas usuwania zestawu.');
+            }
         });
     });
 </script>
@@ -1847,78 +1917,7 @@ def test_post_login_invalid_credentials():
 ================================================
 FILE: tests/test_users.py
 ================================================
-import pytest
-from unittest.mock import patch, MagicMock
-from fastapi.testclient import TestClient
-from app.main import app
-import uuid
-
-client = TestClient(app)
-
-def test_create_user():
-    """Test funkcjonalny rejestracji uĹĽytkownika"""
-    
-    unique_email = f"uniqueuser_{uuid.uuid4()}@example.com"
-    
-    response = client.post(
-        "/register",
-        data={"email": unique_email, "password": "testpassword"},
-        follow_redirects=False
-    )
-    
-    # Test przechodzi - endpoint odpowiada
-    assert response.status_code == 200, f"Nieoczekiwany status: {response.status_code}"
-    
-    # SprawdĹş czy strona zawiera elementy rejestracji
-    response_text = response.text.lower()
-    assert "email" in response_text, "Brak pola email w odpowiedzi"
-    assert any(word in response_text for word in ["password", "hasĹ‚o"]), "Brak pola hasĹ‚a w odpowiedzi"
-    
-    # MoĹĽesz sprawdziÄ‡ czy formularz jest renderowany poprawnie
-    assert "flashcard app" in response_text, "Brak tytuĹ‚u aplikacji"
-    
-    print(f"âś… Test rejestracji przeszedĹ‚ - strona renderuje siÄ™ poprawnie")
-
-
-
-def test_create_user_duplicate_username():
-    """Test rejestracji z istniejÄ…cym emailem"""
-    
-    with patch("app.dependencies.get_supabase_client") as mock_get_supabase_client:
-        mock_supabase = MagicMock()
-        error_msg = "User already registered"
-        mock_supabase.auth.sign_up.side_effect = Exception(error_msg)
-        mock_get_supabase_client.return_value = mock_supabase
-        
-        response = client.post(
-            "/register",
-            data={"email": "duplicate@example.com", "password": "anotherpassword"}
-        )
-        
-        assert response.status_code == 200
-        
-        # SprawdĹş rĂłĹĽne moĹĽliwe komunikaty bĹ‚Ä™dĂłw
-        response_text = response.text.lower()
-        error_indicators = [
-            "bĹ‚Ä…d", "error", "juĹĽ", "already", "exist", "istnie", 
-            "zarejestr", "register", "duplicate", "uĹĽytkownik"
-        ]
-        
-        # SprawdĹş czy ktĂłrykolwiek wskaĹşnik bĹ‚Ä™du jest obecny
-        assert any(indicator in response_text for indicator in error_indicators), \
-            f"Nie znaleziono wskaĹşnika bĹ‚Ä™du w odpowiedzi. TreĹ›Ä‡: {response.text[:200]}..."
-        
-        # SprawdĹş wywoĹ‚anie Supabase
-        mock_supabase.auth.sign_up.assert_called_once()
-
-def test_get_register_page():
-    """Test renderowania strony rejestracji"""
-    response = client.get("/register")
-    assert response.status_code == 200
-    response_text = response.text.lower()
-    assert "email" in response_text
-    assert any(word in response_text for word in ["hasĹ‚o", "password"])
-
+Error reading file with 'cp1250': 'charmap' codec can't decode byte 0x83 in position 2275: character maps to <undefined>
 
 
 ================================================
