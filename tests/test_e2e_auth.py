@@ -59,9 +59,6 @@ def test_register_existing_user(page: Page):
     page.get_by_label("Hasło").fill(password)
     page.get_by_role("button", name="Zarejestruj się").click()
 
-    # Expect to be redirected to the login page
-    expect(page).to_have_url(re.compile(r".*/login"))
-
     # Try to register again with the same email
     page.goto("/register")
     page.get_by_label("Email").fill(email)

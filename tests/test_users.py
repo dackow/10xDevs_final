@@ -38,7 +38,7 @@ def test_register_user_existing_email():
     )
 
     assert response.status_code == 200 # Stays on the same page with an error
-    assert "User already registered" in response.text
+    assert "A user with this email address has already been registered" in response.text
 
 def test_register_user_missing_fields():
     """Test registration with missing email or password."""

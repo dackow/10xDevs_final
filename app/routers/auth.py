@@ -42,7 +42,6 @@ async def login_user(
         return redirect_response
 
     except Exception as e:
-        print(f"DEBUG: Exception during login: {e}") # DEBUG LINE
         return templates.TemplateResponse(request=request, name="login.html", context={"error_message": "Wystąpił błąd podczas logowania."})
 
 @router.get("/register", response_class=HTMLResponse)
@@ -61,12 +60,10 @@ async def register_user(
 
     try:
         response = supabase.auth.admin.create_user({"email": email, "password": password, "email_confirm": True})
-        print(response)
         if not response.user:
             return templates.TemplateResponse(request=request, name="register.html", context={"error_message": "Nie udało się zarejestrować użytkownika."})
         return RedirectResponse(url="/login", status_code=status.HTTP_303_SEE_OTHER)
     except Exception as e:
-        print(e)
         return templates.TemplateResponse(request=request, name="register.html", context={"error_message": str(e)})
 
 @router.post("/logout")
