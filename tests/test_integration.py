@@ -1,27 +1,32 @@
 import pytest
-from unittest.mock import patch, MagicMock
 from fastapi.testclient import TestClient
 from app.main import app
+import uuid
 
-client = TestClient(app)
+# client = TestClient(app) # Removed duplicate client initialization
 
-
-# test_integration.py
-def test_full_user_flow():
-    """Test pełnego przepływu użytkownika"""
+def test_full_user_flow_with_mocked_supabase(client): # Inject client fixture
+    """Test full user flow (registration and login) with real Supabase interactions."""
+    unique_email = f"integration_{uuid.uuid4()}@test.com"
+    # 1. Registration
+    response_register = client.post("/register", data={
+        "email": unique_email,
+        "password": "StrongPassword123!@@@##"
+    }, follow_redirects=False)
     
-    # 1. Rejestracja
-    with patch("app.dependencies.get_supabase_client"):
-        response = client.post("/register", data={
-            "email": "integration@test.com", 
-            "password": "testpass"
-        })
-        assert response.status_code in [200, 303]
+
+    print(unique_email)
+    assert response_register.status_code == 303
+    assert response_register.headers["location"] == "/login"
+    print("✅ Integration test: Registration successful.")
+
+    # 2. Login
+    response_login = client.post("/login", data={
+        "email": unique_email,
+        "password": "StrongPassword123!@@@##"
+    }, follow_redirects=False)
     
-    # 2. Logowanie  
-    with patch("app.dependencies.get_supabase_client"):
-        response = client.post("/login", data={
-            "email": "integration@test.com", 
-            "password": "testpass"
-        })
-        assert response.status_code in [200, 303]
+    assert response_login.status_code == 303
+    assert response_login.headers["location"] == "/dashboard"
+    assert "access_token" in response_login.cookies
+    print("✅ Integration test: Login successful.")

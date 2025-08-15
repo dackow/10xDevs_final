@@ -42,13 +42,14 @@ async def login_user(
         return redirect_response
         
     except Exception as e:
+        print(f"DEBUG: Exception during login: {e}") # DEBUG LINE
         return templates.TemplateResponse(request=request, name="login.html", context={"error_message": "Wystąpił błąd podczas logowania."})
 
 @router.get("/register", response_class=HTMLResponse)
 async def register_page(request: Request):
     return templates.TemplateResponse(request=request, name="register.html")
 
-@router.post("/register", response_class=HTMLResponse)
+@router.post("/register")
 async def register_user(
     request: Request, 
     email: str = Form(...),
