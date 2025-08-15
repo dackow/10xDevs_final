@@ -1,6 +1,7 @@
 from pydantic import BaseModel, ConfigDict
 from datetime import datetime
 from typing import List, Optional
+from uuid import UUID # Import UUID
 
 # =============================================================================
 # 1. SCHEMATY DLA FISZEK (FLASHCARDS)
@@ -21,8 +22,8 @@ class FlashcardUpdate(FlashcardBase):
 
 class Flashcard(FlashcardBase):
     """Pelny schemat fiszki, uzywany w odpowiedziach API (DTO)."""
-    id: Optional[int] = None
-    set_id: Optional[int] = None
+    id: Optional[UUID] = None
+    set_id: Optional[UUID] = None
     created_at: datetime = datetime.now()
     updated_at: datetime = datetime.now()
 
@@ -42,8 +43,8 @@ class FlashcardSetCreate(FlashcardSetBase):
 
 class FlashcardSet(FlashcardSetBase):
     """Schemat reprezentujacy zestaw na liscie (widok podsumowania)."""
-    id: int
-    user_id: int
+    id: UUID
+    user_id: UUID
     created_at: datetime
     updated_at: datetime
 
@@ -67,7 +68,7 @@ class UserCreate(UserBase):
 
 class User(UserBase):
     """Schemat uzytkownika zwracany przez API (DTO), bez hasla."""
-    id: int
+    id: UUID
     created_at: datetime
     updated_at: datetime
 

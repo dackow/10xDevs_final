@@ -5,6 +5,7 @@ Directory structure:
     ├── pyproject.toml
     ├── pytest.ini
     ├── requirements.txt
+    ├── .env_
     ├── .python-version
     ├── app/
     │   ├── __init__.py
@@ -40,29 +41,34 @@ Directory structure:
     │   ├── test_integration.py
     │   ├── test_login_view.py
     │   └── test_users.py
-    └── .ai/
-        ├── api-plan.md
-        ├── delete-flashcard-sets-by-id-implementation-plan.md
-        ├── get-flashcard-sets-by-id-implementation-plan.md
-        ├── get-flashcard-sets-implementation-plan.md
-        ├── opis_do_prd.md
-        ├── opis_projektu.txt
-        ├── podsumowania_do_prd.md
-        ├── post-ai-generate-flashcards-implementation-plan.md
-        ├── post-flashcard-sets-implementation-plan.md
-        ├── post-token-implementation-plan.md
-        ├── post-users-implementation-plan.md
-        ├── prd.md
-        ├── put-flashcards-by-id-implementation-plan.md
-        ├── strona-edycji-fiszki-implementation-plan.md
-        ├── strona-generowanie-fiszek-implementation-plan.md
-        ├── strona-logowania-implementation-plan.md
-        ├── strona-panel-glowny-implementation-plan.md
-        ├── strona-rejestracji-implementation-plan.md
-        ├── strona-szczegoly-zestawu-fiszek-implementation-plan.md
-        ├── supabase-implementation-plan.md
-        ├── tech-stack.md
-        └── ui-plan.md
+    ├── .ai/
+    │   ├── api-plan.md
+    │   ├── delete-flashcard-sets-by-id-implementation-plan.md
+    │   ├── get-flashcard-sets-by-id-implementation-plan.md
+    │   ├── get-flashcard-sets-implementation-plan.md
+    │   ├── opis_do_prd.md
+    │   ├── opis_projektu.txt
+    │   ├── podsumowania_do_prd.md
+    │   ├── post-ai-generate-flashcards-implementation-plan.md
+    │   ├── post-flashcard-sets-implementation-plan.md
+    │   ├── post-token-implementation-plan.md
+    │   ├── post-users-implementation-plan.md
+    │   ├── prd.md
+    │   ├── put-flashcards-by-id-implementation-plan.md
+    │   ├── strona-edycji-fiszki-implementation-plan.md
+    │   ├── strona-generowanie-fiszek-implementation-plan.md
+    │   ├── strona-logowania-implementation-plan.md
+    │   ├── strona-panel-glowny-implementation-plan.md
+    │   ├── strona-rejestracji-implementation-plan.md
+    │   ├── strona-szczegoly-zestawu-fiszek-implementation-plan.md
+    │   ├── supabase-implementation-plan.md
+    │   ├── tech-stack.md
+    │   ├── test-plan-gemini.md
+    │   ├── test-plan.md
+    │   └── ui-plan.md
+    └── .rules/
+        ├── test-rules-playwright.md
+        └── test-rules-pytest.md
 
 ================================================
 FILE: README.md
@@ -98,6 +104,8 @@ The technology stack was chosen with a focus on simplicity, speed of MVP impleme
 | **HTML Template Engine** | Jinja2 | Simple server-side HTML generation. |
 | **CSS Framework** | Bootstrap | Rapid development of a clean and aesthetic user interface. |
 | **Application Server** | Uvicorn | The standard server for FastAPI. |
+| **Unit/Integration Testing** | Pytest, FastAPI TestClient | Comprehensive testing for backend logic and API endpoints. |
+| **E2E Testing (Future)** | Playwright / Selenium | For automated browser-based UI testing. |
 
 ## Getting Started Locally
 
@@ -210,6 +218,7 @@ asyncio_mode = auto
 asyncio_default_fixture_loop_scope = function
 
 
+
 ================================================
 FILE: requirements.txt
 ================================================
@@ -241,6 +250,8 @@ jinja2==3.1.4
 # Testing
 pytest==8.3.4
 pytest-asyncio==0.25.0
+playwright==1.54.0
+pytest-playwright==0.5.0
 
 # Compatible versions of existing dependencies
 annotated-types==0.7.0
@@ -258,6 +269,17 @@ typing-extensions==4.14.1
 urllib3==2.5.0
 
 json_repair==0.48.0
+
+
+================================================
+FILE: .env_
+================================================
+SECRET_KEY="test_key"
+OLLAMA_API_URL=http://172.29.74.255:11434/api/generate
+OLLAMA_MODEL_NAME=llama3.2:latest
+SUPABASE_PASS="RxT3Y,F?N}XaxR~"
+SUPABASE_URL=https://faphpbrvqoncaxbeyjqu.supabase.co
+SUPABASE_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZhcGhwYnJ2cW9uY2F4YmV5anF1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTQ1MTAwODQsImV4cCI6MjA3MDA4NjA4NH0.Y96VSjjmeYWFNit56cIEOlde3xFw0pdr0zUlI9uSyEs
 
 
 
@@ -323,24 +345,16 @@ def get_current_user(request: Request, supabase: Client = Depends(get_supabase_c
         if user_response.user is None:
             raise credentials_exception
         
-        # âś… DEBUGOWANIE - sprawdĹş strukturÄ™ uĹĽytkownika Supabase
-        print(f"đź”Ť DEBUG - Supabase user: {user_response.user}")
-        print(f"đź”Ť DEBUG - User ID: {user_response.user.id}")
-        print(f"đź”Ť DEBUG - User attributes: {dir(user_response.user)}")
-        
         return user_response.user
         
     except Exception as e:
-        print(f"âťŚ Error in get_current_user: {e}")
         raise credentials_exception
-
 
 
 ================================================
 FILE: app/main.py
 ================================================
 import sys
-print("sys.path before imports:", sys.path)
 from fastapi import FastAPI, Request, Depends
 from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
@@ -365,15 +379,10 @@ def read_root():
 async def dashboard(
     request: Request,
     supabase: Client = Depends(get_supabase_client),
-    current_user: Any = Depends(get_current_user)  # âś… ZMIENIONO typ
+    current_user: Any = Depends(get_current_user)
 ):
-    # âś… DEBUGOWANIE
-    print(f"đź”Ť DEBUG dashboard - current_user: {current_user}")
-    print(f"đź”Ť DEBUG dashboard - current_user.id: {current_user.id}")
-    
     flashcard_sets = get_flashcard_sets(supabase, current_user.id)
     return templates.TemplateResponse("dashboard.html", {"request": request, "user": current_user, "flashcard_sets": flashcard_sets})
-
 
 
 ================================================
@@ -386,24 +395,13 @@ from typing import Union, Dict, Any, List
 import uuid
 
 def create_flashcard_set(supabase: Client, set_data: FlashcardSetCreate, user_id: str) -> Dict[str, Any]:
-    # âś… ROZSZERZONE DEBUGOWANIE
-    print(f"đź”Ť DEBUG create_flashcard_set - Received user_id: '{user_id}'")
-    print(f"đź”Ť DEBUG create_flashcard_set - user_id type: {type(user_id)}")
-    print(f"đź”Ť DEBUG create_flashcard_set - user_id is None: {user_id is None}")
-    print(f"đź”Ť DEBUG create_flashcard_set - user_id is empty string: {user_id == ''}")
-    print(f"đź”Ť DEBUG create_flashcard_set - set_data.name: '{set_data.name}'")
-    
     if not user_id:
-        print("âťŚ user_id is empty or None!")
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Brak user_id")
     
     set_name = set_data.name.strip()
     if not set_name:
         raise ValueError("Nazwa zestawu nie moĹĽe byÄ‡ pusta.")
     
-    print(f"đź“‹ Creating set '{set_name}' for user: {user_id}")
-    
-    # SprawdĹş duplikaty
     existing_set = supabase.table('flashcard_sets')\
         .select('id')\
         .eq('user_id', user_id)\
@@ -413,20 +411,15 @@ def create_flashcard_set(supabase: Client, set_data: FlashcardSetCreate, user_id
     if existing_set.data:
         raise ValueError(f"Zestaw o nazwie '{set_name}' juĹĽ istnieje.")
     
-    # âś… DEBUGOWANIE DANYCH DO WSTAWIENIA
     new_set_data = {
         'name': set_name,
         'user_id': user_id
     }
-    print(f"đź”Ť DEBUG - Data to insert: {new_set_data}")
     
     try:
         set_response = supabase.table('flashcard_sets')\
             .insert(new_set_data)\
             .execute()
-        
-        # âś… DEBUGOWANIE ODPOWIEDZI
-        print(f"đź”Ť DEBUG - Supabase insert response: {set_response}")
         
         if not set_response.data:
             raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Nie udaĹ‚o siÄ™ utworzyÄ‡ zestawu")
@@ -434,9 +427,6 @@ def create_flashcard_set(supabase: Client, set_data: FlashcardSetCreate, user_id
         new_set = set_response.data[0]
         new_set_id = new_set['id']
         
-        print(f"âś… Set created: {new_set['name']}")
-        
-        # Dodaj fiszki
         inserted_flashcards = []
         if set_data.flashcards:
             flashcards_to_insert = []
@@ -457,9 +447,7 @@ def create_flashcard_set(supabase: Client, set_data: FlashcardSetCreate, user_id
                 
                 if flashcards_response.data:
                     inserted_flashcards = flashcards_response.data
-                    print(f"âś… Added {len(inserted_flashcards)} flashcards")
                 else:
-                    # Rollback
                     supabase.table('flashcard_sets').delete().eq('id', new_set_id).execute()
                     raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Nie udaĹ‚o siÄ™ dodaÄ‡ fiszek")
         
@@ -472,7 +460,6 @@ def create_flashcard_set(supabase: Client, set_data: FlashcardSetCreate, user_id
         }
         
     except Exception as e:
-        print(f"âťŚ ERROR in create_flashcard_set: {e}")
         if "duplicate key" in str(e).lower():
             raise ValueError(f"Zestaw o nazwie '{set_name}' juĹĽ istnieje.")
         else:
@@ -505,17 +492,32 @@ def update_flashcard(supabase: Client, card_id: Union[str, int], user_id: str, f
     return response.data[0]
 
 def delete_flashcard_set(supabase: Client, set_id: Union[str, int], user_id: str):
-    response = supabase.table('flashcard_sets').select('*').eq('id', set_id).eq('user_id', user_id).execute()
+    response = supabase.table('flashcard_sets')\
+        .select('*')\
+        .eq('id', set_id)\
+        .eq('user_id', user_id)\
+        .execute()
+    
     if not response.data:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Flashcard set not found")
 
-    delete_response = supabase.table('flashcard_sets').delete().eq('id', set_id).execute()
-    
-    if not delete_response.data:
-        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Nie udaĹ‚o siÄ™ usunÄ…Ä‡ zestawu fiszek.")
+    try:
+        delete_response = supabase.table('flashcard_sets')\
+            .delete()\
+            .eq('id', set_id)\
+            .eq('user_id', user_id)\
+            .execute()
         
-    return {"message": "Flashcard set deleted successfully"}
-
+        if not delete_response.data:
+            pass
+        
+        return {"message": "Flashcard set deleted successfully"}
+        
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, 
+            detail=f"Nie udaĹ‚o siÄ™ usunÄ…Ä‡ zestawu fiszek: {str(e)}"
+        )
 
 
 ================================================
@@ -684,14 +686,10 @@ async def set_detail_view(
     set_id: UUID,
     request: Request,
     supabase: Client = Depends(get_supabase_client),
-    current_user: Any = Depends(get_current_user)  # âś… ZMIENIONO typ
+    current_user: Any = Depends(get_current_user)
 ):
     """WyĹ›wietla szczegĂłĹ‚y zestawu fiszek z moĹĽliwoĹ›ciÄ… nauki"""
     try:
-        # âś… DEBUGOWANIE - sprawdĹş user_id
-        print(f"đź”Ť DEBUG - current_user object: {current_user}")
-        print(f"đź”Ť DEBUG - current_user.id: {current_user.id}")
-        
         db_set = get_flashcard_set(
             supabase=supabase, 
             set_id=str(set_id),
@@ -735,7 +733,7 @@ async def edit_flashcard_view(
     card_id: UUID,
     request: Request,
     supabase: Client = Depends(get_supabase_client),
-    current_user: Any = Depends(get_current_user)  # âś… ZMIENIONO typ
+    current_user: Any = Depends(get_current_user)
 ):
     """Formularz edycji fiszki"""
     try:
@@ -771,7 +769,7 @@ async def edit_flashcard_post(
     question: str = Form(...),
     answer: str = Form(...),
     supabase: Client = Depends(get_supabase_client),
-    current_user: Any = Depends(get_current_user)  # âś… ZMIENIONO typ
+    current_user: Any = Depends(get_current_user)
 ):
     """Zapisuje zmiany w fiszce"""
     try:
@@ -826,7 +824,7 @@ async def edit_flashcard_post(
 @router.get("/generate", response_class=HTMLResponse)
 async def handle_generate_view_get(
     request: Request,
-    current_user: Any = Depends(get_current_user)  # âś… ZMIENIONO typ
+    current_user: Any = Depends(get_current_user)
 ):
     return templates.TemplateResponse(
         "generate.html", 
@@ -837,14 +835,9 @@ async def handle_generate_view_get(
 async def handle_generate_view_post(
     request: Request,
     supabase: Client = Depends(get_supabase_client),
-    current_user: Any = Depends(get_current_user)  # âś… ZMIENIONO typ
+    current_user: Any = Depends(get_current_user)
 ):
     try:
-        # âś… DEBUGOWANIE - sprawdĹş user_id na poczÄ…tku
-        print(f"đź”Ť DEBUG POST /generate - current_user: {current_user}")
-        print(f"đź”Ť DEBUG POST /generate - current_user.id: {current_user.id}")
-        print(f"đź”Ť DEBUG POST /generate - user_id type: {type(current_user.id)}")
-        
         form_data = await request.form()
         action = form_data.get("action")
 
@@ -939,9 +932,6 @@ async def handle_generate_view_post(
                 )
 
             try:
-                # âś… DEBUGOWANIE przed wywoĹ‚aniem create_flashcard_set
-                print(f"đź”Ť DEBUG przed create_flashcard_set - user_id: {current_user.id}")
-                
                 set_data = FlashcardSetCreate(name=set_name, flashcards=flashcards_to_create)
                 created_set = create_flashcard_set(
                     supabase=supabase, 
@@ -971,7 +961,6 @@ async def handle_generate_view_post(
                 )
 
     except Exception as e:
-        print(f"âťŚ UNEXPECTED ERROR in POST /generate: {e}")
         return templates.TemplateResponse(
             "generate.html", 
             {
@@ -985,7 +974,7 @@ async def handle_generate_view_post(
 async def delete_flashcard_set_endpoint(
     set_id: UUID,
     supabase: Client = Depends(get_supabase_client),
-    current_user: Any = Depends(get_current_user)  # âś… ZMIENIONO typ
+    current_user: Any = Depends(get_current_user)
 ):
     try:
         delete_flashcard_set(supabase=supabase, set_id=str(set_id), user_id=current_user.id)
@@ -994,7 +983,6 @@ async def delete_flashcard_set_endpoint(
             status_code=status.HTTP_303_SEE_OTHER
         )
     except HTTPException as e:
-        # Przekieruj na dashboard z informacjÄ… o bĹ‚Ä™dzie
         return RedirectResponse(
             url=f"/dashboard?error_message={e.detail}", 
             status_code=status.HTTP_303_SEE_OTHER
@@ -1282,9 +1270,23 @@ FILE: app/templates/base.html
 <html>
 <head>
     <title>Flashcard App</title>
-    <link rel="stylesheet" href="https://bootswatch.com/5/litera/bootstrap.min.css">
+    <link rel="stylesheet" href="https://bootswatch.com/5/quartz/bootstrap.min.css">
 </head>
 <body>
+    <nav class="navbar navbar-expand-lg navbar-light bg-light">
+        <div class="container-fluid">
+            <a class="navbar-brand" href="/dashboard">Flashcard App</a>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav ms-auto">
+                    <li class="nav-item">
+                        <form action="/logout" method="post">
+                            <button type="submit" class="btn btn-link nav-link">Wyloguj</button>
+                        </form>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
     <div class="container">
         {% block content %}{% endblock %}
     </div>
@@ -1296,110 +1298,7 @@ FILE: app/templates/base.html
 ================================================
 FILE: app/templates/dashboard.html
 ================================================
-{% extends "base.html" %}
-
-{% block content %}
-<div class="container mt-4">
-    <h1 class="mb-4">Witaj, {{ user.username }}!</h1>
-
-    {% if notification %}
-    <div class="alert alert-success" role="alert">
-        {{ notification }}
-    </div>
-    {% endif %}
-
-    <div class="d-flex justify-content-between align-items-center mb-3">
-        <h2>Twoje zestawy fiszek</h2>
-        <a href="/generate" class="btn btn-primary">StwĂłrz nowy zestaw</a>
-    </div>
-
-    {% if flashcard_sets %}
-    <ul class="list-group">
-        {% for set in flashcard_sets %}
-        <li class="list-group-item d-flex justify-content-between align-items-center">
-            <a href="/sets/{{ set.id }}" class="text-decoration-none fs-5">{{ set.name }}</a>
-            <button type="button" class="btn btn-danger btn-sm" data-bs-toggle="modal" data-bs-target="#deleteConfirmationModal" data-set-id="{{ set.id }}" data-set-name="{{ set.name }}">
-                UsuĹ„
-            </button>
-        </li>
-        {% endfor %}
-    </ul>
-    {% else %}
-    <div class="alert alert-info" role="alert">
-        Nie masz jeszcze ĹĽadnych zestawĂłw fiszek. StwĂłrz swĂłj pierwszy zestaw!
-    </div>
-    {% endif %}
-</div>
-
-<!-- Modal Potwierdzenia UsuniÄ™cia -->
-<div class="modal fade" id="deleteConfirmationModal" tabindex="-1" aria-labelledby="deleteConfirmationModalLabel" aria-hidden="true">
-    <div class="modal-dialog">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title" id="deleteConfirmationModalLabel">Potwierdzenie usuniÄ™cia</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-            </div>
-            <div class="modal-body">
-                Czy na pewno chcesz usunÄ…Ä‡ zestaw <strong id="modalSetName"></strong>?
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Anuluj</button>
-                <form id="deleteForm" method="post" action="">
-                    <button type="submit" class="btn btn-danger">UsuĹ„</button>
-                </form>
-            </div>
-        </div>
-    </div>
-</div>
-
-<script>
-    document.addEventListener('DOMContentLoaded', function () {
-        var deleteConfirmationModal = document.getElementById('deleteConfirmationModal');
-        var deleteForm = document.getElementById('deleteForm');
-
-        deleteConfirmationModal.addEventListener('show.bs.modal', function (event) {
-            var button = event.relatedTarget; // Przycisk, ktĂłry wywoĹ‚aĹ‚ modal
-            var setId = button.getAttribute('data-set-id');
-            var setName = button.getAttribute('data-set-name');
-
-            var modalSetName = deleteConfirmationModal.querySelector('#modalSetName');
-            modalSetName.textContent = setName;
-            deleteForm.action = `/sets/${setId}/delete`; // Ustawienie akcji formularza
-        });
-
-        deleteForm.addEventListener('submit', async function (event) {
-            event.preventDefault(); // Zapobiegaj domyĹ›lnej wysyĹ‚ce formularza
-
-            const formAction = this.action;
-
-            try {
-                const response = await fetch(formAction, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/x-www-form-urlencoded'
-                    },
-                    // body: new URLSearchParams(new FormData(this)).toString() // JeĹ›li formularz ma inne pola
-                });
-
-                if (response.redirected) {
-                    window.location.href = response.url; // Przekieruj przeglÄ…darkÄ™
-                } else if (!response.ok) {
-                    // ObsĹ‚uga bĹ‚Ä™dĂłw, jeĹ›li backend zwrĂłci bĹ‚Ä…d HTTP (np. 404, 500)
-                    const errorText = await response.text();
-                    alert(`BĹ‚Ä…d podczas usuwania: ${errorText}`);
-                } else {
-                    // JeĹ›li sukces, ale bez przekierowania (np. API zwraca 200 OK)
-                    // MoĹĽesz odĹ›wieĹĽyÄ‡ listÄ™ zestawĂłw lub usunÄ…Ä‡ element z DOM
-                    window.location.reload(); // Najprostsze rozwiÄ…zanie
-                }
-            } catch (error) {
-                console.error('BĹ‚Ä…d sieci lub serwera:', error);
-                alert('WystÄ…piĹ‚ bĹ‚Ä…d sieci lub serwera podczas usuwania zestawu.');
-            }
-        });
-    });
-</script>
-{% endblock %}
+Error reading file with 'cp1250': 'charmap' codec can't decode byte 0x90 in position 3962: character maps to <undefined>
 
 
 ================================================
@@ -1699,6 +1598,13 @@ def mock_auth_system():
     
     # Mock Supabase client
     mock_supabase = MagicMock()
+
+    # Configure mock_supabase for sign_up
+    mock_supabase.auth.sign_up.return_value = MagicMock(user=mock_user)
+
+    # Configure mock_supabase for sign_in_with_password
+    mock_session = MagicMock(access_token="mock_access_token")
+    mock_supabase.auth.sign_in_with_password.return_value = MagicMock(session=mock_session)
     
     with patch("app.dependencies.get_current_user", return_value=mock_user), \
          patch("app.dependencies.get_supabase_client", return_value=mock_supabase):
@@ -1917,7 +1823,7 @@ def test_post_login_invalid_credentials():
 ================================================
 FILE: tests/test_users.py
 ================================================
-Error reading file with 'cp1250': 'charmap' codec can't decode byte 0x83 in position 2275: character maps to <undefined>
+Error reading file with 'cp1250': 'charmap' codec can't decode byte 0x83 in position 2336: character maps to <undefined>
 
 
 ================================================
@@ -3932,10 +3838,362 @@ Na podstawie analizy dokumentu wymagaĹ„ produktu (PRD), w szczegĂłlnoĹ›c
 | **Silnik SzablonĂłw HTML**  | Jinja2      | Proste generowanie HTML po stronie serwera.        |
 | **Framework CSS**          | Bootstrap   | Szybkie budowanie estetycznego interfejsu.         |
 | **Serwer Aplikacji**       | Uvicorn     | Standardowy serwer dla FastAPI.                    |
+| **Testy Jednostkowe/Integracyjne** | Pytest, FastAPI TestClient | Do testowania logiki biznesowej i endpointĂłw API. |
+| **Testy E2E (PrzyszĹ‚oĹ›Ä‡)** | Playwright / Selenium | Do automatyzacji testĂłw interfejsu uĹĽytkownika w przeglÄ…darce. |
+
+
+================================================
+FILE: .ai/test-plan-gemini.md
+================================================
+# Plan TestĂłw Projektu: AI Flashcard Generator
+
+## 1. Wprowadzenie i Cele Testowania
+
+Niniejszy dokument przedstawia kompleksowy plan testĂłw dla aplikacji "AI Flashcard Generator". Celem jest systematyczna weryfikacja jakoĹ›ci, funkcjonalnoĹ›ci, bezpieczeĹ„stwa i wydajnoĹ›ci aplikacji, aby zapewniÄ‡ jej stabilne i niezawodne dziaĹ‚anie oraz pozytywne doĹ›wiadczenia uĹĽytkownikĂłw.
+
+**GĹ‚Ăłwne cele testowania:**
+*   Weryfikacja peĹ‚nej zgodnoĹ›ci aplikacji z wymaganiami funkcjonalnymi opisanymi w dokumentacji (`README.md`, `history.txt`).
+*   Zapewnienie bezpieczeĹ„stwa danych uĹĽytkownikĂłw poprzez rygorystyczne testy autoryzacji i izolacji danych.
+*   Potwierdzenie stabilnoĹ›ci integracji z usĹ‚ugami zewnÄ™trznymi (Supabase, Ollama) i odpornoĹ›ci aplikacji na ich awarie.
+*   Identyfikacja, dokumentacja i Ĺ›ledzenie defektĂłw w celu ich eliminacji przed wdroĹĽeniem.
+*   Zapewnienie, ĹĽe kluczowe przepĹ‚ywy uĹĽytkownika sÄ… intuicyjne i dziaĹ‚ajÄ… bezbĹ‚Ä™dnie.
+
+## 2. Zakres TestĂłw
+
+### WĹ‚Ä…czone do zakresu:
+*   **Testy funkcjonalne:** PeĹ‚en zakres operacji CRUD na zestawach fiszek i fiszkach, procesy rejestracji, logowania i wylogowywania.
+*   **Testy logiki biznesowej:** Generowanie fiszek na podstawie tekstu, walidacja danych wejĹ›ciowych (np. puste pola, duplikaty nazw).
+*   **Testy integracji:** Weryfikacja poprawnej komunikacji pomiÄ™dzy backendem (FastAPI) a usĹ‚ugami zewnÄ™trznymi (Supabase, Ollama) poprzez mockowanie ich odpowiedzi.
+*   **Testy bezpieczeĹ„stwa:** Weryfikacja mechanizmĂłw autoryzacji (dostÄ™p do zasobĂłw tylko dla ich wĹ‚aĹ›cicieli) i zarzÄ…dzania sesjÄ… (obsĹ‚uga tokenĂłw w ciasteczkach).
+*   **Testy interfejsu uĹĽytkownika (UI):** Podstawowa weryfikacja poprawnoĹ›ci renderowania szablonĂłw Jinja2, obsĹ‚ugi formularzy i dziaĹ‚ania kluczowych elementĂłw interaktywnych (np. modal potwierdzenia usuniÄ™cia).
+
+### WyĹ‚Ä…czone z zakresu:
+*   SzczegĂłĹ‚owe testy wydajnoĹ›ciowe i obciÄ…ĹĽeniowe (np. przy uĹĽyciu Locust, JMeter).
+*   Testowanie samej infrastruktury Supabase i modelu jÄ™zykowego Ollama.
+*   Testy kompatybilnoĹ›ci na szerokiej gamie przeglÄ…darek i urzÄ…dzeĹ„ (testy ograniczone do najnowszych wersji Chrome/Firefox).
+*   Zaawansowane testy penetracyjne.
+
+## 3. Typy TestĂłw do Przeprowadzenia
+
+*   **Testy Jednostkowe (Unit Tests):**
+    *   **Cel:** Izolowana weryfikacja poprawnoĹ›ci dziaĹ‚ania poszczegĂłlnych funkcji, zwĹ‚aszcza w warstwie logiki (`crud.py`) i usĹ‚ug (`services/ollama.py`).
+    *   **NarzÄ™dzia:** `pytest`, `unittest.mock`.
+*   **Testy Integracyjne (Integration Tests):**
+    *   **Cel:** Sprawdzenie wspĂłĹ‚pracy miÄ™dzy komponentami aplikacji, gĹ‚Ăłwnie na poziomie endpointĂłw API.
+    *   **NarzÄ™dzia:** `pytest`, `FastAPI TestClient`.
+*   **Testy End-to-End (E2E):**
+    *   **Cel:** Weryfikacja kompletnych przepĹ‚ywĂłw uĹĽytkownika w Ĺ›rodowisku zbliĹĽonym do produkcyjnego.
+    *   **NarzÄ™dzia:** Testy manualne na Ĺ›rodowisku stagingowym.
+*   **Testy Regresji (Regression Tests):**
+    *   **Cel:** Zapewnienie, ĹĽe nowe zmiany nie zepsuĹ‚y istniejÄ…cych funkcjonalnoĹ›ci.
+    *   **NarzÄ™dzia:** Uruchomienie peĹ‚nego zestawu zautomatyzowanych testĂłw (`pytest`).
+
+## 4. Scenariusze Testowe dla Kluczowych FunkcjonalnoĹ›ci
+
+### A. Uwierzytelnianie i ZarzÄ…dzanie Kontem (US-001, US-002, US-003)
+*   **TC-AUTH-01 (Sukces):** UĹĽytkownik moĹĽe pomyĹ›lnie zarejestrowaÄ‡ siÄ™ z unikalnym e-mailem i hasĹ‚em, a nastÄ™pnie zalogowaÄ‡ siÄ™ na nowo utworzone konto.
+*   **TC-AUTH-02 (BĹ‚Ä…d):** PrĂłba rejestracji z e-mailem, ktĂłry juĹĽ istnieje w bazie danych, koĹ„czy siÄ™ wyĹ›wietleniem komunikatu o bĹ‚Ä™dzie.
+*   **TC-AUTH-03 (BĹ‚Ä…d):** PrĂłba logowania z nieprawidĹ‚owym hasĹ‚em lub nieistniejÄ…cym e-mailem koĹ„czy siÄ™ wyĹ›wietleniem komunikatu o bĹ‚Ä™dzie.
+*   **TC-AUTH-04 (Sukces):** Zalogowany uĹĽytkownik moĹĽe siÄ™ wylogowaÄ‡, co koĹ„czy jego sesjÄ™ i uniemoĹĽliwia dostÄ™p do chronionych zasobĂłw.
+*   **TC-AUTH-05 (BezpieczeĹ„stwo):** Niezalogowany uĹĽytkownik, prĂłbujÄ…c uzyskaÄ‡ dostÄ™p do `/dashboard`, jest przekierowywany na stronÄ™ logowania.
+
+### B. Generowanie i ZarzÄ…dzanie Fiszkami (US-004 do US-009)
+*   **TC-GEN-01 (Sukces):** Zalogowany uĹĽytkownik wkleja tekst, wybiera liczbÄ™ fiszek i klika "Generuj". Po chwili na stronie wyĹ›wietla siÄ™ poprawna liczba wygenerowanych par pytanie-odpowiedĹş.
+*   **TC-GEN-02 (BĹ‚Ä…d):** PrĂłba generowania fiszek z pustego pola tekstowego skutkuje wyĹ›wietleniem bĹ‚Ä™du walidacji.
+*   **TC-GEN-03 (OdpornoĹ›Ä‡):** Aplikacja poprawnie obsĹ‚uguje sytuacjÄ™, w ktĂłrej serwis AI zwraca bĹ‚Ä…d lub niepoprawny format JSON, wyĹ›wietlajÄ…c uĹĽytkownikowi stosowny komunikat.
+*   **TC-CRUD-01 (Sukces):** UĹĽytkownik moĹĽe zapisaÄ‡ wygenerowane fiszki jako nowy zestaw, podajÄ…c unikalnÄ… dla siebie nazwÄ™. Po zapisie jest przekierowywany na pulpit, gdzie widoczny jest nowy zestaw.
+*   **TC-CRUD-02 (BĹ‚Ä…d):** PrĂłba zapisania zestawu bez podania nazwy lub z nazwÄ…, ktĂłra juĹĽ istnieje, koĹ„czy siÄ™ bĹ‚Ä™dem walidacji.
+*   **TC-CRUD-03 (Sukces):** UĹĽytkownik moĹĽe przejrzeÄ‡ szczegĂłĹ‚y swojego zestawu, a nastÄ™pnie edytowaÄ‡ treĹ›Ä‡ wybranej fiszki. Zmiany sÄ… poprawnie zapisywane.
+*   **TC-CRUD-04 (Sukces):** UĹĽytkownik moĹĽe usunÄ…Ä‡ caĹ‚y zestaw fiszek po potwierdzeniu operacji w oknie modalnym.
+*   **TC-CRUD-05 (BezpieczeĹ„stwo):** UĹĽytkownik nie moĹĽe przeglÄ…daÄ‡, edytowaÄ‡ ani usuwaÄ‡ zestawĂłw naleĹĽÄ…cych do innych uĹĽytkownikĂłw (prĂłba dostÄ™pu przez bezpoĹ›redni URL).
+
+## 5. Ĺšrodowisko Testowe
+
+*   **Ĺšrodowisko deweloperskie/testowe:** Lokalna maszyna z Python 3.13, `pytest` do uruchamiania testĂłw. ZaleĹĽnoĹ›ci zewnÄ™trzne (Supabase, Ollama) sÄ… mockowane.
+*   **Ĺšrodowisko Staging:** Dedykowana instancja aplikacji wdroĹĽona na platformie hostingowej, poĹ‚Ä…czona z deweloperskÄ… instancjÄ… Supabase i testowym endpointem Ollama. SĹ‚uĹĽy do testĂłw E2E.
+*   **PrzeglÄ…darki:** Google Chrome (najnowsza wersja), Mozilla Firefox (najnowsza wersja).
+
+## 6. NarzÄ™dzia do Testowania
+
+*   **Framework do testĂłw automatycznych:** `pytest`
+*   **Biblioteka do mockowania:** `unittest.mock`
+*   **Klient HTTP do testĂłw API:** `FastAPI TestClient`
+*   **ZarzÄ…dzanie zaleĹĽnoĹ›ciami:** `pip` z `requirements.txt`
+*   **System CI/CD:** GitHub Actions (do automatycznego uruchamiania testĂłw po kaĹĽdym pushu do repozytorium).
+*   **Raportowanie bĹ‚Ä™dĂłw:** GitHub Issues.
+
+## 7. Harmonogram TestĂłw
+
+Testowanie jest procesem ciÄ…gĹ‚ym, zintegrowanym z cyklem deweloperskim.
+*   **Testy jednostkowe i integracyjne:** Pisane przez deweloperĂłw rĂłwnolegle z implementacjÄ… nowych funkcji. Uruchamiane automatycznie przy kaĹĽdym commicie.
+*   **Testy E2E (manualne):** Wykonywane na Ĺ›rodowisku staging po wdroĹĽeniu nowej, stabilnej wersji funkcjonalnoĹ›ci.
+*   **Testy regresji:** PeĹ‚en zestaw testĂłw automatycznych uruchamiany przed kaĹĽdym planowanym wdroĹĽeniem na Ĺ›rodowisko produkcyjne.
+
+## 8. Kryteria Akceptacji TestĂłw
+
+*   **Kryterium wyjĹ›cia:** WdroĹĽenie moĹĽe nastÄ…piÄ‡, jeĹ›li:
+    *   100% zautomatyzowanych testĂłw (jednostkowych i integracyjnych) przechodzi pomyĹ›lnie.
+    *   Wszystkie zdefiniowane scenariusze testowe dla kluczowych funkcjonalnoĹ›ci (E2E) zostaĹ‚y wykonane i zakoĹ„czyĹ‚y siÄ™ sukcesem.
+    *   Nie istniejÄ… ĹĽadne otwarte defekty o priorytecie krytycznym lub wysokim.
+    *   Pokrycie kodu testami (code coverage) dla kluczowych moduĹ‚Ăłw (`crud.py`, `services/ollama.py`) wynosi co najmniej 85%.
+
+## 9. Role i OdpowiedzialnoĹ›ci w Procesie Testowania
+
+*   **InĹĽynier QA (autor planu):** Odpowiedzialny za projektowanie, implementacjÄ™ i utrzymanie planu testĂłw, tworzenie i wykonywanie scenariuszy testowych (automatycznych i manualnych), raportowanie defektĂłw i weryfikacjÄ™ poprawek.
+*   **Deweloperzy:** Odpowiedzialni za pisanie testĂłw jednostkowych dla swojego kodu, naprawianie zgĹ‚oszonych defektĂłw oraz wsparcie w analizie skomplikowanych problemĂłw.
+
+## 10. Procedury Raportowania BĹ‚Ä™dĂłw
+
+KaĹĽdy zidentyfikowany defekt zostanie zaraportowany jako "Issue" w repozytorium GitHub projektu, zgodnie z nastÄ™pujÄ…cym szablonem:
+
+*   **TytuĹ‚:** ZwiÄ™zĹ‚y i jasny opis problemu.
+*   **Opis:**
+    *   **Kroki do reprodukcji:** SzczegĂłĹ‚owa, numerowana lista krokĂłw potrzebnych do odtworzenia bĹ‚Ä™du.
+    *   **Oczekiwany wynik:** Co powinno siÄ™ wydarzyÄ‡.
+    *   **Rzeczywisty wynik:** Co faktycznie siÄ™ wydarzyĹ‚o.
+*   **Ĺšrodowisko:** Wersja przeglÄ…darki, system operacyjny, Ĺ›rodowisko (np. Staging).
+*   **ZaĹ‚Ä…czniki:** Zrzuty ekranu, logi, nagrania wideo.
+*   **Etykiety:** Przypisanie etykiet (np. `bug`, `high-priority`, `ui`, `backend`).
+*   **Przypisanie:** Przypisanie do odpowiedniego dewelopera.
+
+BĹ‚Ä…d pozostaje otwarty do momentu dostarczenia poprawki, ktĂłra zostanie pomyĹ›lnie zweryfikowana przez QA na Ĺ›rodowisku staging.
+
+
+================================================
+FILE: .ai/test-plan.md
+================================================
+## Plan TestĂłw Projektu "10xDevs_final"
+
+### 1. Wprowadzenie i Cele Testowania
+
+Niniejszy dokument przedstawia kompleksowy plan testĂłw dla aplikacji "10xDevs_final", systemu do zarzÄ…dzania fiszkami z funkcjonalnoĹ›ciÄ… generowania ich za pomocÄ… AI. GĹ‚Ăłwnym celem testowania jest zapewnienie wysokiej jakoĹ›ci oprogramowania, jego stabilnoĹ›ci, bezpieczeĹ„stwa oraz zgodnoĹ›ci z wymaganiami funkcjonalnymi i niefunkcjonalnymi.
+
+**GĹ‚Ăłwne cele testowania:**
+*   Weryfikacja poprawnoĹ›ci dziaĹ‚ania wszystkich funkcjonalnoĹ›ci aplikacji.
+*   Zapewnienie bezpieczeĹ„stwa danych uĹĽytkownikĂłw i ich prywatnoĹ›ci.
+*   Potwierdzenie stabilnoĹ›ci i wydajnoĹ›ci aplikacji pod obciÄ…ĹĽeniem.
+*   Identyfikacja i raportowanie defektĂłw w celu ich usuniÄ™cia.
+*   Zapewnienie pozytywnego doĹ›wiadczenia uĹĽytkownika (UX).
+
+### 2. Zakres TestĂłw
+
+Zakres testĂłw obejmuje wszystkie komponenty aplikacji, od interfejsu uĹĽytkownika, przez logikÄ™ biznesowÄ…, po integracjÄ™ z zewnÄ™trznymi usĹ‚ugami.
+
+**WĹ‚Ä…czone do zakresu:**
+*   **ModuĹ‚ Uwierzytelniania i Autoryzacji:** Rejestracja, logowanie, wylogowanie, zarzÄ…dzanie sesjami.
+*   **ModuĹ‚ ZarzÄ…dzania Fiszami:** Tworzenie, przeglÄ…danie, edycja, usuwanie zestawĂłw fiszek i pojedynczych fiszek.
+*   **ModuĹ‚ Generowania Fisz AI:** Generowanie fiszek na podstawie tekstu wejĹ›ciowego za pomocÄ… modelu Ollama.
+*   **Interfejs UĹĽytkownika (UI):** PoprawnoĹ›Ä‡ wyĹ›wietlania, responsywnoĹ›Ä‡, nawigacja.
+*   **Integracja z BazÄ… Danych (Supabase):** PoprawnoĹ›Ä‡ operacji CRUD, spĂłjnoĹ›Ä‡ danych.
+*   **ObsĹ‚uga BĹ‚Ä™dĂłw:** Reakcja aplikacji na nieoczekiwane dane wejĹ›ciowe i bĹ‚Ä™dy systemowe.
+
+**WyĹ‚Ä…czone z zakresu:**
+*   Testowanie infrastruktury Supabase (zakĹ‚ada siÄ™, ĹĽe usĹ‚uga dziaĹ‚a poprawnie).
+*   Testowanie samego modelu AI (Ollama) poza kontekstem jego integracji z aplikacjÄ….
+
+### 3. Typy TestĂłw do Przeprowadzenia
+
+*   **Testy Jednostkowe (Unit Tests):**
+    *   Cel: Weryfikacja poprawnoĹ›ci dziaĹ‚ania najmniejszych, izolowanych czÄ™Ĺ›ci kodu (funkcje, metody).
+    *   Zakres: Logika biznesowa w `app/crud/`, `app/services/`, `app/dependencies/`.
+*   **Testy Integracyjne (Integration Tests):**
+    *   Cel: Weryfikacja interakcji miÄ™dzy rĂłĹĽnymi komponentami aplikacji (np. API z bazÄ… danych, API z usĹ‚ugÄ… AI).
+    *   Zakres: Endpointy API (`app/routers/`), interakcje z Supabase, wywoĹ‚ania Ollama.
+*   **Testy Funkcjonalne (Functional Tests):**
+    *   Cel: Weryfikacja, czy aplikacja speĹ‚nia okreĹ›lone wymagania funkcjonalne.
+    *   Zakres: Wszystkie Ĺ›cieĹĽki uĹĽytkownika (rejestracja, logowanie, tworzenie zestawĂłw, generowanie fiszek, nauka fiszek).
+*   **Testy UI/UX (User Interface/User Experience Tests):**
+    *   Cel: Weryfikacja poprawnoĹ›ci interfejsu uĹĽytkownika, jego responsywnoĹ›ci i uĹĽytecznoĹ›ci.
+    *   Zakres: Wszystkie szablony HTML (`app/templates/`), nawigacja, formularze.
+*   **Testy BezpieczeĹ„stwa (Security Tests):**
+    *   Cel: Identyfikacja podatnoĹ›ci na ataki (np. nieautoryzowany dostÄ™p, wstrzykiwanie SQL, XSS).
+    *   Zakres: ModuĹ‚ uwierzytelniania, walidacja danych wejĹ›ciowych.
+*   **Testy WydajnoĹ›ciowe (Performance Tests):**
+    *   Cel: Ocena szybkoĹ›ci, responsywnoĹ›ci i stabilnoĹ›ci aplikacji pod rĂłĹĽnym obciÄ…ĹĽeniem.
+    *   Zakres: Generowanie fiszek AI, operacje CRUD na duĹĽej liczbie danych.
+*   **Testy Regresji (Regression Tests):**
+    *   Cel: Zapewnienie, ĹĽe nowe zmiany w kodzie nie wprowadziĹ‚y bĹ‚Ä™dĂłw do istniejÄ…cych funkcjonalnoĹ›ci.
+    *   Zakres: CaĹ‚a aplikacja po kaĹĽdej istotnej zmianie lub nowej wersji.
+
+### 4. Scenariusze Testowe dla Kluczowych FunkcjonalnoĹ›ci
+
+**A. Uwierzytelnianie i Autoryzacja:**
+*   **Rejestracja:**
+    *   PomyĹ›lna rejestracja nowego uĹĽytkownika.
+    *   Rejestracja z istniejÄ…cym adresem e-mail.
+    *   Rejestracja z niepoprawnym formatem e-maila.
+    *   Rejestracja z pustymi polami.
+*   **Logowanie:**
+    *   PomyĹ›lne logowanie z poprawnymi danymi.
+    *   Logowanie z niepoprawnym hasĹ‚em.
+    *   Logowanie z nieistniejÄ…cym e-mailem.
+    *   Logowanie z pustymi polami.
+*   **Wylogowanie:**
+    *   PomyĹ›lne wylogowanie uĹĽytkownika.
+*   **DostÄ™p autoryzowany:**
+    *   PrĂłba dostÄ™pu do zasobĂłw wymagajÄ…cych autoryzacji bez zalogowania.
+    *   PrĂłba dostÄ™pu do zasobĂłw innego uĹĽytkownika.
+
+**B. ZarzÄ…dzanie Zestawami Fiszek:**
+*   **Tworzenie zestawu:**
+    *   PomyĹ›lne utworzenie nowego zestawu fiszek.
+    *   Tworzenie zestawu z pustÄ… nazwÄ….
+    *   Tworzenie zestawu z fiszkami i bez fiszek.
+*   **PrzeglÄ…danie zestawĂłw:**
+    *   WyĹ›wietlanie wszystkich zestawĂłw naleĹĽÄ…cych do uĹĽytkownika.
+    *   WyĹ›wietlanie szczegĂłĹ‚Ăłw konkretnego zestawu.
+    *   PrĂłba wyĹ›wietlenia zestawu naleĹĽÄ…cego do innego uĹĽytkownika.
+*   **Edycja fiszki:**
+    *   PomyĹ›lna edycja pytania i odpowiedzi istniejÄ…cej fiszki.
+    *   Edycja fiszki z pustym pytaniem/odpowiedziÄ….
+    *   PrĂłba edycji nieistniejÄ…cej fiszki.
+*   **Usuwanie zestawu:**
+    *   PomyĹ›lne usuniÄ™cie zestawu fiszek.
+    *   PrĂłba usuniÄ™cia nieistniejÄ…cego zestawu.
+    *   PrĂłba usuniÄ™cia zestawu naleĹĽÄ…cego do innego uĹĽytkownika.
+
+**C. Generowanie Fisz AI:**
+*   **Generowanie:**
+    *   Generowanie fiszek z krĂłtkiego, prostego tekstu.
+    *   Generowanie fiszek z dĹ‚ugiego, zĹ‚oĹĽonego tekstu.
+    *   Generowanie fiszek z tekstu zawierajÄ…cego bĹ‚Ä™dy ortograficzne/gramatyczne.
+    *   Generowanie fiszek z tekstu w innym jÄ™zyku niĹĽ polski (jeĹ›li wspierane).
+    *   Generowanie fiszek z pustym tekstem wejĹ›ciowym.
+    *   Generowanie okreĹ›lonej liczby fiszek.
+*   **Zapisywanie wygenerowanych fiszek:**
+    *   PomyĹ›lne zapisanie wygenerowanych fiszek jako nowy zestaw.
+    *   Zapisywanie z pustÄ… nazwÄ… zestawu.
+    *   Zapisywanie bez wybranych fiszek.
+
+### 5. Ĺšrodowisko Testowe
+
+*   **Ĺšrodowisko deweloperskie:** Lokalna maszyna deweloperska.
+*   **Ĺšrodowisko testowe (staging):** Docelowo dedykowane Ĺ›rodowisko odzwierciedlajÄ…ce produkcjÄ™.
+*   **Baza danych:** Supabase (instancja deweloperska/testowa).
+*   **Model AI:** Lokalna instancja Ollama lub zdalna usĹ‚uga.
+*   **PrzeglÄ…darki:** Chrome (najnowsza wersja), Firefox (najnowsza wersja), Edge (najnowsza wersja).
+*   **System operacyjny:** Windows, macOS, Linux (w zaleĹĽnoĹ›ci od dostÄ™pnoĹ›ci).
+
+### 6. NarzÄ™dzia do Testowania
+
+*   **Testy jednostkowe/integracyjne (Backend):** `pytest`, `FastAPI TestClient`.
+*   **Testy UI/UX (automatyzacja):** `Playwright` lub `Selenium` (do rozwaĹĽenia w przyszĹ‚oĹ›ci).
+*   **Testy API (manualne/automatyczne):** `Postman`, `curl`, `pytest-httpx`.
+*   **Testy wydajnoĹ›ciowe:** `Locust` lub `JMeter` (do rozwaĹĽenia w przyszĹ‚oĹ›ci).
+*   **ZarzÄ…dzanie testami:** Arkusze kalkulacyjne lub dedykowane narzÄ™dzie (np. TestLink, Zephyr).
+*   **Raportowanie bĹ‚Ä™dĂłw:** System Ĺ›ledzenia bĹ‚Ä™dĂłw (np. Jira, GitHub Issues).
+
+### 7. Harmonogram TestĂłw
+
+Harmonogram testĂłw bÄ™dzie zintegrowany z cyklem ĹĽycia rozwoju oprogramowania (SDLC).
+
+*   **Faza 1: Testy jednostkowe i integracyjne (ciÄ…gĹ‚e):** Wykonywane przez deweloperĂłw w trakcie implementacji.
+*   **Faza 2: Testy funkcjonalne i UI (po zakoĹ„czeniu moduĹ‚u):** Wykonywane przez QA po dostarczeniu stabilnej wersji moduĹ‚u.
+*   **Faza 3: Testy regresji (przed kaĹĽdym wdroĹĽeniem):** Wykonywane przed kaĹĽdym wdroĹĽeniem na Ĺ›rodowisko staging.
+*   **Faza 4: Testy bezpieczeĹ„stwa i wydajnoĹ›ci (okresowo/przed wdroĹĽeniem produkcyjnym):** Wykonywane po osiÄ…gniÄ™ciu stabilnoĹ›ci funkcjonalnej.
+
+### 8. Kryteria Akceptacji TestĂłw
+
+*   Wszystkie krytyczne i waĹĽne defekty zostaĹ‚y usuniÄ™te i zweryfikowane.
+*   Pokrycie testami jednostkowymi i integracyjnymi na poziomie co najmniej 80% dla kluczowej logiki biznesowej.
+*   Wszystkie kluczowe scenariusze funkcjonalne zostaĹ‚y wykonane pomyĹ›lnie.
+*   Aplikacja dziaĹ‚a stabilnie i responsywnie na wszystkich wspieranych platformach.
+*   Brak znanych luk bezpieczeĹ„stwa o wysokim priorytecie.
+*   WydajnoĹ›Ä‡ aplikacji speĹ‚nia zdefiniowane wymagania (np. czas odpowiedzi API < 500ms).
+
+### 9. Role i OdpowiedzialnoĹ›ci w Procesie Testowania
+
+*   **Deweloperzy:**
+    *   Pisanie i utrzymywanie testĂłw jednostkowych.
+    *   Wykonywanie testĂłw integracyjnych na poziomie komponentĂłw.
+    *   Naprawianie zgĹ‚oszonych defektĂłw.
+*   **InĹĽynier QA (Ja):**
+    *   Tworzenie i utrzymywanie planu testĂłw, przypadkĂłw testowych i scenariuszy.
+    *   Wykonywanie testĂłw funkcjonalnych, integracyjnych, UI/UX, bezpieczeĹ„stwa i wydajnoĹ›ci.
+    *   Raportowanie i Ĺ›ledzenie defektĂłw.
+    *   Zapewnienie jakoĹ›ci caĹ‚ego procesu.
+*   **Product Owner/Manager Projektu:**
+    *   Definiowanie wymagaĹ„ i kryteriĂłw akceptacji.
+    *   Akceptacja ukoĹ„czonych funkcjonalnoĹ›ci.
+
+### 10. Procedury Raportowania BĹ‚Ä™dĂłw
+
+1.  **Identyfikacja defektu:** Tester identyfikuje defekt podczas wykonywania testĂłw.
+2.  **Dokumentacja defektu:** Defekt jest dokumentowany w systemie Ĺ›ledzenia bĹ‚Ä™dĂłw, zawierajÄ…c:
+    *   TytuĹ‚ (zwiÄ™zĹ‚y i opisowy).
+    *   Opis (szczegĂłĹ‚owy opis problemu).
+    *   Kroki do reprodukcji.
+    *   Oczekiwany wynik.
+    *   Rzeczywisty wynik.
+    *   ZaĹ‚Ä…czniki (screeny, logi, nagrania wideo).
+    *   Priorytet (krytyczny, wysoki, Ĺ›redni, niski).
+    *   Waga (blokujÄ…cy, powaĹĽny, Ĺ›redni, drobny, kosmetyczny).
+    *   Przypisanie do dewelopera.
+3.  **Weryfikacja defektu:** Po naprawieniu defektu przez dewelopera, tester weryfikuje poprawkÄ™.
+4.  **ZamkniÄ™cie defektu:** Po pomyĹ›lnej weryfikacji, defekt jest zamykany.
+5.  **Raporty:** Regularne raporty o stanie testĂłw i defektĂłw bÄ™dÄ… generowane i udostÄ™pniane zespoĹ‚owi projektowemu.
+
 
 
 ================================================
 FILE: .ai/ui-plan.md
 ================================================
 Error reading file with 'cp1250': 'charmap' codec can't decode byte 0x81 in position 6351: character maps to <undefined>
+
+
+================================================
+FILE: .rules/test-rules-playwright.md
+================================================
+# AI Rules for {{project-name}}
+
+{{project-description}}
+
+## TESTING
+
+### Guidelines for UNIT
+
+#### PYTEST
+
+- Use fixtures for test setup and dependency injection
+- Implement parameterized tests for testing multiple inputs for {{function_types}}
+- Use monkeypatch for mocking dependencies
+
+
+### Guidelines for E2E
+
+#### PLAYWRIGHT
+
+- Initialize configuration only with Chromium/Desktop Chrome browser
+- Use browser contexts for isolating test environments
+- Implement the Page Object Model for maintainable tests
+- Use locators for resilient element selection
+- Leverage API testing for backend validation
+- Implement visual comparison with expect(page).toHaveScreenshot()
+- Use the codegen tool for test recording
+- Leverage trace viewer for debugging test failures
+- Implement test hooks for setup and teardown
+- Use expect assertions with specific matchers
+- Leverage parallel execution for faster test runs
+
+
+
+
+
+================================================
+FILE: .rules/test-rules-pytest.md
+================================================
+# AI Rules for {{project-name}}
+
+{{project-description}}
+
+## TESTING
+
+### Guidelines for UNIT
+
+#### PYTEST
+
+- Use fixtures for test setup and dependency injection
+- Implement parameterized tests for testing multiple inputs for {{function_types}}
+- Use monkeypatch for mocking dependencies
+
 

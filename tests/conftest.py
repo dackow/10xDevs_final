@@ -20,6 +20,13 @@ def mock_auth_system():
     
     # Mock Supabase client
     mock_supabase = MagicMock()
+
+    # Configure mock_supabase for sign_up
+    mock_supabase.auth.sign_up.return_value = MagicMock(user=mock_user)
+
+    # Configure mock_supabase for sign_in_with_password
+    mock_session = MagicMock(access_token="mock_access_token")
+    mock_supabase.auth.sign_in_with_password.return_value = MagicMock(session=mock_session)
     
     with patch("app.dependencies.get_current_user", return_value=mock_user), \
          patch("app.dependencies.get_supabase_client", return_value=mock_supabase):
