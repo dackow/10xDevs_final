@@ -19,3 +19,8 @@ __pycache__/
 digest.txt
 commit_message.txt
 history.txt
+pycache/
+*.pyc
+server*.log
+.env
+.env_
