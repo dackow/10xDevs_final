@@ -14,33 +14,33 @@ async def login_page(request: Request):
 
 @router.post("/login")
 async def login_user(
-    request: Request, 
+    request: Request,
     email: str = Form(...),
-    password: str = Form(...), 
+    password: str = Form(...),
     supabase: Client = Depends(get_supabase_client)
 ):
     if not email or not password:
         return templates.TemplateResponse(request=request, name="login.html", context={"error_message": "Email i hasło są wymagane."})
-    
+
     try:
         response = supabase.auth.sign_in_with_password({"email": email, "password": password})
-        
+
         if not response.session or not response.session.access_token:
-            return templates.TemplateResponse(request=request, name="login.html", context={"error_message": "Błąd autoryzacji - brak tokenu."})
-        
+            return templates.TemplateResponse(request=request, name="login.html", context={"error_message": "Błąd autoryzacji - nieprawidłowy email lub hasło."})
+
         access_token = response.session.access_token
-        
+
         redirect_response = RedirectResponse(url="/dashboard", status_code=status.HTTP_303_SEE_OTHER)
         redirect_response.set_cookie(
-            key="access_token", 
-            value=f"Bearer {access_token}", 
-            httponly=True, 
+            key="access_token",
+            value=f"Bearer {access_token}",
+            httponly=True,
             samesite="Lax",
             secure=True,
             max_age=3600
         )
         return redirect_response
-        
+
     except Exception as e:
         print(f"DEBUG: Exception during login: {e}") # DEBUG LINE
         return templates.TemplateResponse(request=request, name="login.html", context={"error_message": "Wystąpił błąd podczas logowania."})
@@ -51,18 +51,22 @@ async def register_page(request: Request):
 
 @router.post("/register")
 async def register_user(
-    request: Request, 
+    request: Request,
     email: str = Form(...),
-    password: str = Form(...), 
+    password: str = Form(...),
     supabase: Client = Depends(get_supabase_client)
 ):
     if not email or not password:
         return templates.TemplateResponse(request=request, name="register.html", context={"error_message": "Email i hasło są wymagane."})
-    
+
     try:
-        response = supabase.auth.sign_up({"email": email, "password": password})
+        response = supabase.auth.admin.create_user({"email": email, "password": password, "email_confirm": True})
+        print(response)
+        if not response.user:
+            return templates.TemplateResponse(request=request, name="register.html", context={"error_message": "Nie udało się zarejestrować użytkownika."})
         return RedirectResponse(url="/login", status_code=status.HTTP_303_SEE_OTHER)
     except Exception as e:
+        print(e)
         return templates.TemplateResponse(request=request, name="register.html", context={"error_message": str(e)})
 
 @router.post("/logout")

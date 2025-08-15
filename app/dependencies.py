@@ -1,12 +1,12 @@
 from fastapi import Depends, HTTPException, status, Request
-from app.config import SUPABASE_URL, SUPABASE_KEY
+from app.config import SUPABASE_URL, SUPABASE_SERVICE_KEY
 from supabase import create_client, Client
 from typing import Any
 
 def get_supabase_client() -> Client:
-    if not SUPABASE_URL or not SUPABASE_KEY:
+    if not SUPABASE_URL or not SUPABASE_SERVICE_KEY:
         raise Exception("Supabase configuration missing")
-    return create_client(SUPABASE_URL, SUPABASE_KEY)
+    return create_client(SUPABASE_URL, SUPABASE_SERVICE_KEY)
 
 def get_current_user(request: Request, supabase: Client = Depends(get_supabase_client)) -> Any:
     credentials_exception = HTTPException(
