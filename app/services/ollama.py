@@ -20,7 +20,7 @@ if not OLLAMA_MODEL_NAME:
 
 async def generate_flashcards_from_text(text: str, count: int) -> List[FlashcardCreate]:
     prompt = f"""
-    Generate {count} flashcards (question and answer) from the following text.
+    Generate exactly {count} flashcards (question and answer) from the following text.
     YOUR RESPONSE MUST BE A JSON ARRAY ONLY. DO NOT INCLUDE ANY OTHER TEXT OR EXPLANATIONS.
     Each object in the array must have 'question' and 'answer' keys.
     Example:
@@ -37,7 +37,10 @@ async def generate_flashcards_from_text(text: str, count: int) -> List[Flashcard
         "model": OLLAMA_MODEL_NAME,
         "prompt": prompt,
         "stream": False,
-        
+        "system": "You are a helpful assistant that generates flashcards in JSON format.",
+        "options": {
+            "num_predict": 2048
+        }
     }
 
     max_retries = 3

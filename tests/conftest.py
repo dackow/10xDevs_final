@@ -2,6 +2,8 @@ import pytest
 from unittest.mock import MagicMock, patch
 from fastapi.testclient import TestClient
 from app.main import app
+import uuid
+from app.dependencies import get_supabase_client
 
 @pytest.fixture(scope="session")
 def client():
@@ -9,7 +11,29 @@ def client():
     with TestClient(app) as test_client:
         yield test_client
 
-@pytest.fixture(autouse=True)
+@pytest.fixture(scope="function")
+def test_user():
+    """Create a user in Supabase for testing and clean it up after."""
+    supabase = get_supabase_client()
+    unique_email = f"test_user_{uuid.uuid4()}@example.com"
+    password = "password123"
+    
+    # Create user in auth.users
+    auth_response = supabase.auth.admin.create_user({"email": unique_email, "password": password, "email_confirm": True})
+    user = auth_response.user
+    assert user is not None
+
+    # Insert user into public.users
+    user_data = {"id": user.id, "email": unique_email}
+    insert_response = supabase.table("users").insert(user_data).execute()
+    assert insert_response.data is not None
+
+    yield {"email": unique_email, "password": password, "id": user.id}
+
+    # Teardown: delete the user
+    supabase.auth.admin.delete_user(user.id)
+
+@pytest.fixture()
 def mock_auth_system():
     """Automatyczne mockowanie systemu autoryzacji"""
     
@@ -28,8 +52,7 @@ def mock_auth_system():
     mock_session = MagicMock(access_token="mock_access_token")
     mock_supabase.auth.sign_in_with_password.return_value = MagicMock(session=mock_session)
     
-    with patch("app.dependencies.get_current_user", return_value=mock_user), \
-         patch("app.dependencies.get_supabase_client", return_value=mock_supabase):
+    with patch("app.dependencies.get_current_user", return_value=mock_user), patch("app.dependencies.get_supabase_client", return_value=mock_supabase):
         
         yield {
             'user': mock_user,

@@ -59,12 +59,32 @@ async def register_user(
         return templates.TemplateResponse(request=request, name="register.html", context={"error_message": "Email i hasło są wymagane."})
 
     try:
-        response = supabase.auth.admin.create_user({"email": email, "password": password, "email_confirm": True})
-        if not response.user:
-            return templates.TemplateResponse(request=request, name="register.html", context={"error_message": "Nie udało się zarejestrować użytkownika."})
+        # Create user in auth.users
+        auth_response = supabase.auth.admin.create_user({"email": email, "password": password, "email_confirm": True})
+        if not auth_response.user:
+            return templates.TemplateResponse(request=request, name="register.html", context={"error_message": "Nie udało się zarejestrować użytkownika w systemie autoryzacji."})
+        
+        user_id = auth_response.user.id
+        
+        # Insert user into public.users
+        user_data = {"id": user_id, "email": email}
+        insert_response = supabase.table("users").insert(user_data).execute()
+
+        # Check for errors during insert
+        if insert_response.data is None and insert_response.error is not None:
+            # If the insert fails, we should probably delete the user from auth.users to keep things clean
+            supabase.auth.admin.delete_user(user_id)
+            return templates.TemplateResponse(request=request, name="register.html", context={"error_message": f"Nie udało się zapisać użytkownika w bazie danych: {insert_response.error.message}"})
+
+
         return RedirectResponse(url="/login", status_code=status.HTTP_303_SEE_OTHER)
     except Exception as e:
-        return templates.TemplateResponse(request=request, name="register.html", context={"error_message": str(e)})
+        # Check if the error is due to an existing user
+        if "A user with this email address has already been registered" in str(e):
+            error_message = "Użytkownik o tym adresie email już istnieje."
+        else:
+            error_message = f"Wystąpił błąd podczas rejestracji: {str(e)}"
+        return templates.TemplateResponse(request=request, name="register.html", context={"error_message": error_message})
 
 @router.post("/logout")
 async def logout_user(supabase: Client = Depends(get_supabase_client)):
