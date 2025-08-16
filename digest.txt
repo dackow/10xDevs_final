@@ -5,7 +5,6 @@ Directory structure:
     ├── pyproject.toml
     ├── pytest.ini
     ├── requirements.txt
-    ├── .env_
     ├── .python-version
     ├── app/
     │   ├── __init__.py
@@ -36,6 +35,10 @@ Directory structure:
     │       └── set_detail.html
     ├── tests/
     │   ├── conftest.py
+    │   ├── test_e2e_auth.py
+    │   ├── test_e2e_flashcards.py
+    │   ├── test_e2e_login.py
+    │   ├── test_e2e_register.py
     │   ├── test_flashcards.py
     │   ├── test_helpers.py
     │   ├── test_integration.py
@@ -216,7 +219,11 @@ FILE: pytest.ini
 pythonpath = .
 asyncio_mode = auto
 asyncio_default_fixture_loop_scope = function
-
+base_url = http://127.0.0.1:8000
+markers =
+    e2e: End-to-end tests
+env_files =
+    .env.test
 
 
 ================================================
@@ -252,6 +259,7 @@ pytest==8.3.4
 pytest-asyncio==0.25.0
 playwright==1.54.0
 pytest-playwright==0.5.0
+pytest-dotenv==0.5.2
 
 # Compatible versions of existing dependencies
 annotated-types==0.7.0
@@ -269,17 +277,6 @@ typing-extensions==4.14.1
 urllib3==2.5.0
 
 json_repair==0.48.0
-
-
-================================================
-FILE: .env_
-================================================
-SECRET_KEY="test_key"
-OLLAMA_API_URL=http://172.29.74.255:11434/api/generate
-OLLAMA_MODEL_NAME=llama3.2:latest
-SUPABASE_PASS="RxT3Y,F?N}XaxR~"
-SUPABASE_URL=https://faphpbrvqoncaxbeyjqu.supabase.co
-SUPABASE_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZhcGhwYnJ2cW9uY2F4YmV5anF1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTQ1MTAwODQsImV4cCI6MjA3MDA4NjA4NH0.Y96VSjjmeYWFNit56cIEOlde3xFw0pdr0zUlI9uSyEs
 
 
 
@@ -302,14 +299,22 @@ FILE: app/config.py
 import os
 from dotenv import load_dotenv
 
+# WybĂłr pliku .env przez ENV_FILE (fallback na ".env")
+#ENV_FILE = os.getenv("ENV_FILE", ".env")
 load_dotenv()
 
+# Klucze i konfiguracja
 SECRET_KEY = os.getenv("SECRET_KEY")
 ALGORITHM = "HS256"
-ACCESS_TOKEN_EXPIRE_MINUTES = 30
+ACCESS_TOKEN_EXPIRE_MINUTES = int(os.getenv("ACCESS_TOKEN_EXPIRE_MINUTES", "30"))
 
 SUPABASE_URL = os.getenv("SUPABASE_URL")
 SUPABASE_KEY = os.getenv("SUPABASE_KEY")
+SUPABASE_SERVICE_KEY = os.getenv("SUPABASE_SERVICE_KEY")
+
+# (opcjonalnie) zmienne dla Ollama, jeĹ›li uĹĽywasz:
+# OLLAMA_API_URL = os.getenv("OLLAMA_API_URL")
+# OLLAMA_MODEL_NAME = os.getenv("OLLAMA_MODEL_NAME")
 
 
 
@@ -317,14 +322,14 @@ SUPABASE_KEY = os.getenv("SUPABASE_KEY")
 FILE: app/dependencies.py
 ================================================
 from fastapi import Depends, HTTPException, status, Request
-from app.config import SUPABASE_URL, SUPABASE_KEY
+from app.config import SUPABASE_URL, SUPABASE_SERVICE_KEY
 from supabase import create_client, Client
 from typing import Any
 
 def get_supabase_client() -> Client:
-    if not SUPABASE_URL or not SUPABASE_KEY:
+    if not SUPABASE_URL or not SUPABASE_SERVICE_KEY:
         raise Exception("Supabase configuration missing")
-    return create_client(SUPABASE_URL, SUPABASE_KEY)
+    return create_client(SUPABASE_URL, SUPABASE_SERVICE_KEY)
 
 def get_current_user(request: Request, supabase: Client = Depends(get_supabase_client)) -> Any:
     credentials_exception = HTTPException(
@@ -587,33 +592,33 @@ async def login_page(request: Request):
 
 @router.post("/login")
 async def login_user(
-    request: Request, 
+    request: Request,
     email: str = Form(...),
-    password: str = Form(...), 
+    password: str = Form(...),
     supabase: Client = Depends(get_supabase_client)
 ):
     if not email or not password:
         return templates.TemplateResponse(request=request, name="login.html", context={"error_message": "Email i hasĹ‚o sÄ… wymagane."})
-    
+
     try:
         response = supabase.auth.sign_in_with_password({"email": email, "password": password})
-        
+
         if not response.session or not response.session.access_token:
-            return templates.TemplateResponse(request=request, name="login.html", context={"error_message": "BĹ‚Ä…d autoryzacji - brak tokenu."})
-        
+            return templates.TemplateResponse(request=request, name="login.html", context={"error_message": "BĹ‚Ä…d autoryzacji - nieprawidĹ‚owy email lub hasĹ‚o."})
+
         access_token = response.session.access_token
-        
+
         redirect_response = RedirectResponse(url="/dashboard", status_code=status.HTTP_303_SEE_OTHER)
         redirect_response.set_cookie(
-            key="access_token", 
-            value=f"Bearer {access_token}", 
-            httponly=True, 
+            key="access_token",
+            value=f"Bearer {access_token}",
+            httponly=True,
             samesite="Lax",
             secure=True,
             max_age=3600
         )
         return redirect_response
-        
+
     except Exception as e:
         return templates.TemplateResponse(request=request, name="login.html", context={"error_message": "WystÄ…piĹ‚ bĹ‚Ä…d podczas logowania."})
 
@@ -621,21 +626,43 @@ async def login_user(
 async def register_page(request: Request):
     return templates.TemplateResponse(request=request, name="register.html")
 
-@router.post("/register", response_class=HTMLResponse)
+@router.post("/register")
 async def register_user(
-    request: Request, 
+    request: Request,
     email: str = Form(...),
-    password: str = Form(...), 
+    password: str = Form(...),
     supabase: Client = Depends(get_supabase_client)
 ):
     if not email or not password:
         return templates.TemplateResponse(request=request, name="register.html", context={"error_message": "Email i hasĹ‚o sÄ… wymagane."})
-    
+
     try:
-        response = supabase.auth.sign_up({"email": email, "password": password})
+        # Create user in auth.users
+        auth_response = supabase.auth.admin.create_user({"email": email, "password": password, "email_confirm": True})
+        if not auth_response.user:
+            return templates.TemplateResponse(request=request, name="register.html", context={"error_message": "Nie udaĹ‚o siÄ™ zarejestrowaÄ‡ uĹĽytkownika w systemie autoryzacji."})
+        
+        user_id = auth_response.user.id
+        
+        # Insert user into public.users
+        user_data = {"id": user_id, "email": email}
+        insert_response = supabase.table("users").insert(user_data).execute()
+
+        # Check for errors during insert
+        if insert_response.data is None and insert_response.error is not None:
+            # If the insert fails, we should probably delete the user from auth.users to keep things clean
+            supabase.auth.admin.delete_user(user_id)
+            return templates.TemplateResponse(request=request, name="register.html", context={"error_message": f"Nie udaĹ‚o siÄ™ zapisaÄ‡ uĹĽytkownika w bazie danych: {insert_response.error.message}"})
+
+
         return RedirectResponse(url="/login", status_code=status.HTTP_303_SEE_OTHER)
     except Exception as e:
-        return templates.TemplateResponse(request=request, name="register.html", context={"error_message": str(e)})
+        # Check if the error is due to an existing user
+        if "A user with this email address has already been registered" in str(e):
+            error_message = "UĹĽytkownik o tym adresie email juĹĽ istnieje."
+        else:
+            error_message = f"WystÄ…piĹ‚ bĹ‚Ä…d podczas rejestracji: {str(e)}"
+        return templates.TemplateResponse(request=request, name="register.html", context={"error_message": error_message})
 
 @router.post("/logout")
 async def logout_user(supabase: Client = Depends(get_supabase_client)):
@@ -989,13 +1016,13 @@ async def delete_flashcard_set_endpoint(
         )
 
 
-
 ================================================
 FILE: app/schemas/schemas.py
 ================================================
 from pydantic import BaseModel, ConfigDict
 from datetime import datetime
 from typing import List, Optional
+from uuid import UUID # Import UUID
 
 # =============================================================================
 # 1. SCHEMATY DLA FISZEK (FLASHCARDS)
@@ -1016,8 +1043,8 @@ class FlashcardUpdate(FlashcardBase):
 
 class Flashcard(FlashcardBase):
     """Pelny schemat fiszki, uzywany w odpowiedziach API (DTO)."""
-    id: Optional[int] = None
-    set_id: Optional[int] = None
+    id: Optional[UUID] = None
+    set_id: Optional[UUID] = None
     created_at: datetime = datetime.now()
     updated_at: datetime = datetime.now()
 
@@ -1037,8 +1064,8 @@ class FlashcardSetCreate(FlashcardSetBase):
 
 class FlashcardSet(FlashcardSetBase):
     """Schemat reprezentujacy zestaw na liscie (widok podsumowania)."""
-    id: int
-    user_id: int
+    id: UUID
+    user_id: UUID
     created_at: datetime
     updated_at: datetime
 
@@ -1062,7 +1089,7 @@ class UserCreate(UserBase):
 
 class User(UserBase):
     """Schemat uzytkownika zwracany przez API (DTO), bez hasla."""
-    id: int
+    id: UUID
     created_at: datetime
     updated_at: datetime
 
@@ -1089,7 +1116,6 @@ class AIGenerationRequest(BaseModel):
 class AIGenerationResponse(BaseModel):
     """Schemat dla odpowiedzi z wygenerowanymi fiszkami (DTO)."""
     flashcards: List[FlashcardCreate]
-
 
 
 ================================================
@@ -1158,7 +1184,7 @@ if not OLLAMA_MODEL_NAME:
 
 async def generate_flashcards_from_text(text: str, count: int) -> List[FlashcardCreate]:
     prompt = f"""
-    Generate {count} flashcards (question and answer) from the following text.
+    Generate exactly {count} flashcards (question and answer) from the following text.
     YOUR RESPONSE MUST BE A JSON ARRAY ONLY. DO NOT INCLUDE ANY OTHER TEXT OR EXPLANATIONS.
     Each object in the array must have 'question' and 'answer' keys.
     Example:
@@ -1175,7 +1201,10 @@ async def generate_flashcards_from_text(text: str, count: int) -> List[Flashcard
         "model": OLLAMA_MODEL_NAME,
         "prompt": prompt,
         "stream": False,
-        
+        "system": "You are a helpful assistant that generates flashcards in JSON format.",
+        "options": {
+            "num_predict": 2048
+        }
     }
 
     max_retries = 3
@@ -1298,7 +1327,58 @@ FILE: app/templates/base.html
 ================================================
 FILE: app/templates/dashboard.html
 ================================================
-Error reading file with 'cp1250': 'charmap' codec can't decode byte 0x90 in position 3962: character maps to <undefined>
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Flashcard App</title>
+    <link rel="stylesheet" href="https://bootswatch.com/5/quartz/bootstrap.min.css">
+</head>
+<body>
+    <nav class="navbar navbar-expand-lg navbar-light bg-light">
+        <div class="container-fluid">
+            <a class="navbar-brand" href="/dashboard">Flashcard App</a>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav ms-auto">
+                    <li class="nav-item">
+                        <form action="/logout" method="post">
+                            <button type="submit" class="btn btn-link nav-link">Wyloguj</button>
+                        </form>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+    <div class="container">
+        
+<div class="container mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h2 class="mb-0">Witaj, {{ user.email }}!</h2>
+        <a href="/generate" class="btn btn-primary">StwĂłrz nowy zestaw</a>
+    </div>
+
+    <h3 class="mt-4">Twoje zestawy fiszek</h3>
+
+    {% if flashcard_sets %}
+    <div class="list-group">
+        {% for set in flashcard_sets %}
+        <div class="list-group-item d-flex justify-content-between align-items-center">
+            <a href="/sets/{{ set.id }}" class="text-decoration-none fs-5">{{ set.name }}</a>
+            <form action="/sets/{{ set.id }}/delete" method="post" onsubmit="return confirm('Czy na pewno chcesz usunÄ…Ä‡ zestaw {{ set.name }}?');">
+                <button type="submit" class="btn btn-danger btn-sm">UsuĹ„</button>
+            </form>
+        </div>
+        {% endfor %}
+    </div>
+    {% else %}
+    <div class="alert alert-info" role="alert">
+        Nie masz jeszcze ĹĽadnych zestawĂłw. StwĂłrz swĂłj pierwszy!
+    </div>
+    {% endif %}
+</div>
+
+    </div>
+</body>
+</html>
 
 
 ================================================
@@ -1402,7 +1482,6 @@ FILE: app/templates/generate.html
 {% endblock %}
 
 
-
 ================================================
 FILE: app/templates/login.html
 ================================================
@@ -1440,7 +1519,6 @@ FILE: app/templates/login.html
     </div>
 </div>
 {% endblock %}
-
 
 
 ================================================
@@ -1580,6 +1658,8 @@ import pytest
 from unittest.mock import MagicMock, patch
 from fastapi.testclient import TestClient
 from app.main import app
+import uuid
+from app.dependencies import get_supabase_client
 
 @pytest.fixture(scope="session")
 def client():
@@ -1587,7 +1667,29 @@ def client():
     with TestClient(app) as test_client:
         yield test_client
 
-@pytest.fixture(autouse=True)
+@pytest.fixture(scope="function")
+def test_user():
+    """Create a user in Supabase for testing and clean it up after."""
+    supabase = get_supabase_client()
+    unique_email = f"test_user_{uuid.uuid4()}@example.com"
+    password = "password123"
+    
+    # Create user in auth.users
+    auth_response = supabase.auth.admin.create_user({"email": unique_email, "password": password, "email_confirm": True})
+    user = auth_response.user
+    assert user is not None
+
+    # Insert user into public.users
+    user_data = {"id": user.id, "email": unique_email}
+    insert_response = supabase.table("users").insert(user_data).execute()
+    assert insert_response.data is not None
+
+    yield {"email": unique_email, "password": password, "id": user.id}
+
+    # Teardown: delete the user
+    supabase.auth.admin.delete_user(user.id)
+
+@pytest.fixture()
 def mock_auth_system():
     """Automatyczne mockowanie systemu autoryzacji"""
     
@@ -1606,13 +1708,228 @@ def mock_auth_system():
     mock_session = MagicMock(access_token="mock_access_token")
     mock_supabase.auth.sign_in_with_password.return_value = MagicMock(session=mock_session)
     
-    with patch("app.dependencies.get_current_user", return_value=mock_user), \
-         patch("app.dependencies.get_supabase_client", return_value=mock_supabase):
+    with patch("app.dependencies.get_current_user", return_value=mock_user), patch("app.dependencies.get_supabase_client", return_value=mock_supabase):
         
         yield {
             'user': mock_user,
             'supabase': mock_supabase
         }
+
+
+
+================================================
+FILE: tests/test_e2e_auth.py
+================================================
+import re
+from playwright.sync_api import Page, expect
+import pytest
+import random
+import string
+
+def get_random_string(length):
+    # choose from all lowercase letter
+    letters = string.ascii_lowercase
+    result_str = ''.join(random.choice(letters) for i in range(length))
+    return result_str
+
+@pytest.mark.e2e
+def test_logout(page: Page):
+    """
+    Test that a logged in user can logout.
+    """
+    # Generate a unique email for the test user
+    random_string = get_random_string(10)
+    email = f"test_user_{random_string}@example.com"
+    password = "password123"
+
+    # Register a new user
+    page.goto("/register")
+    page.get_by_label("Email").fill(email)
+    page.get_by_label("HasĹ‚o").fill(password)
+    page.get_by_role("button", name="Zarejestruj siÄ™").click()
+
+    # Expect to be redirected to the login page
+    expect(page).to_have_url(re.compile(r".*/login"))
+
+    # Log in with the new user
+    page.get_by_label("Email").fill(email)
+    page.get_by_label("HasĹ‚o").fill(password)
+    page.get_by_role("button", name="Zaloguj siÄ™").click()
+
+    # Expect to be redirected to the dashboard
+    expect(page).to_have_url(re.compile(r".*/dashboard"))
+
+    # Logout
+    page.get_by_role("button", name="Wyloguj").click()
+
+    # Expect to be redirected to the login page
+    expect(page).to_have_url(re.compile(r".*/login"))
+
+@pytest.mark.e2e
+def test_register_existing_user(page: Page):
+    """
+    Test that registering with an existing email shows an error.
+    """
+    # Generate a unique email for the test user
+    random_string = get_random_string(10)
+    email = f"test_user_{random_string}@example.com"
+    password = "password123"
+
+    # Register a new user
+    page.goto("/register")
+    page.get_by_label("Email").fill(email)
+    page.get_by_label("HasĹ‚o").fill(password)
+    page.get_by_role("button", name="Zarejestruj siÄ™").click()
+
+    # Try to register again with the same email
+    page.goto("/register")
+    page.get_by_label("Email").fill(email)
+    page.get_by_label("HasĹ‚o").fill(password)
+    page.get_by_role("button", name="Zarejestruj siÄ™").click()
+
+    # Expect to stay on the register page and see an error message
+    expect(page).to_have_url(re.compile(r".*/register"))
+    error_message = page.locator("div.alert.alert-danger")
+    expect(error_message).to_be_visible()
+
+
+================================================
+FILE: tests/test_e2e_flashcards.py
+================================================
+import re
+from playwright.sync_api import Page, expect
+import pytest
+import random
+import string
+
+def get_random_string(length):
+    # choose from all lowercase letter
+    letters = string.ascii_lowercase
+    result_str = ''.join(random.choice(letters) for i in range(length))
+    return result_str
+
+def login_user(page: Page):
+    """Helper function to log in a user."""
+    random_string = get_random_string(10)
+    email = f"test_user_{random_string}@example.com"
+    password = "password123"
+
+    # Register a new user
+    page.goto("/register")
+    page.get_by_label("Email").fill(email)
+    page.get_by_label("HasĹ‚o").fill(password)
+    page.get_by_role("button", name="Zarejestruj siÄ™").click()
+
+    # Log in with the new user
+    page.goto("/login")
+    page.get_by_label("Email").fill(email)
+    page.get_by_label("HasĹ‚o").fill(password)
+    page.get_by_role("button", name="Zaloguj siÄ™").click()
+    expect(page).to_have_url(re.compile(r".*/dashboard"))
+
+
+@pytest.mark.e2e
+def test_generate_flashcards(page: Page):
+    """
+    Test generating flashcards from text.
+    """
+    login_user(page)
+
+    page.goto("/generate")
+
+    # Fill the form
+    page.get_by_label("Tekst ĹşrĂłdĹ‚owy").fill("This is a test text for generating flashcards.")
+    page.get_by_label("IloĹ›Ä‡ fiszek").select_option("5")
+    page.get_by_role("button", name="Generuj fiszki").click()
+
+    # Assert that the save form is now visible
+    expect(page.get_by_role("button", name="Zapisz zestaw")).to_be_visible()
+
+    # Assert that there are 5 question and 5 answer fields
+    question_textareas = page.locator("textarea[name='questions']")
+    answer_textareas = page.locator("textarea[name='answers']")
+    expect(question_textareas).to_have_count(5)
+    expect(answer_textareas).to_have_count(5)
+
+
+
+================================================
+FILE: tests/test_e2e_login.py
+================================================
+import re
+from playwright.sync_api import Page, expect
+import pytest
+
+@pytest.mark.e2e
+def test_login_page_elements(page: Page):
+    """
+    Test that the login page has all the expected elements.
+    """
+    # Navigate to the login page
+    page.goto("/login")
+
+    # Check for the main heading
+    heading = page.get_by_role("heading", name="Logowanie")
+    expect(heading).to_be_visible()
+
+    # Check for the email input field
+    email_input = page.get_by_label("Email")
+    expect(email_input).to_be_visible()
+    expect(email_input).to_be_editable()
+
+    # Check for the password input field
+    password_input = page.get_by_label("HasĹ‚o")
+    expect(password_input).to_be_visible()
+    expect(password_input).to_be_editable()
+
+    # Check for the submit button
+    login_button = page.get_by_role("button", name="Zaloguj siÄ™")
+    expect(login_button).to_be_visible()
+    expect(login_button).to_be_enabled()
+
+    # Check for the link to the registration page
+    register_link = page.get_by_role("link", name="Zarejestruj siÄ™ tutaj")
+    expect(register_link).to_be_visible()
+
+
+
+================================================
+FILE: tests/test_e2e_register.py
+================================================
+import re
+from playwright.sync_api import Page, expect
+import pytest
+
+@pytest.mark.e2e
+def test_register_page_elements(page: Page):
+    """
+    Test that the register page has all the expected elements.
+    """
+    # Navigate to the register page
+    page.goto("/register")
+
+    # Check for the main heading
+    heading = page.get_by_role("heading", name="Rejestracja")
+    expect(heading).to_be_visible()
+
+    # Check for the email input field
+    email_input = page.get_by_label("Email")
+    expect(email_input).to_be_visible()
+    expect(email_input).to_be_editable()
+
+    # Check for the password input field
+    password_input = page.get_by_label("HasĹ‚o")
+    expect(password_input).to_be_visible()
+    expect(password_input).to_be_editable()
+
+    # Check for the submit button
+    register_button = page.get_by_role("button", name="Zarejestruj siÄ™")
+    expect(register_button).to_be_visible()
+    expect(register_button).to_be_enabled()
+
+    # Check for the link to the login page
+    login_link = page.get_by_role("link", name="Zaloguj siÄ™")
+    expect(login_link).to_be_visible()
 
 
 
@@ -1730,37 +2047,30 @@ def mock_supabase_auth_error(error_message="Authentication failed"):
     return side_effect
 
 
-
 ================================================
 FILE: tests/test_integration.py
 ================================================
 import pytest
-from unittest.mock import patch, MagicMock
 from fastapi.testclient import TestClient
 from app.main import app
+import uuid
 
-client = TestClient(app)
-
-
-# test_integration.py
-def test_full_user_flow():
-    """Test peĹ‚nego przepĹ‚ywu uĹĽytkownika"""
+def test_full_user_flow_with_mocked_supabase(client, test_user):
+    """Test full user flow (registration and login) with real Supabase interactions."""
     
-    # 1. Rejestracja
-    with patch("app.dependencies.get_supabase_client"):
-        response = client.post("/register", data={
-            "email": "integration@test.com", 
-            "password": "testpass"
-        })
-        assert response.status_code in [200, 303]
+    # The user is already created by the test_user fixture.
+    # We can directly proceed to login.
     
-    # 2. Logowanie  
-    with patch("app.dependencies.get_supabase_client"):
-        response = client.post("/login", data={
-            "email": "integration@test.com", 
-            "password": "testpass"
-        })
-        assert response.status_code in [200, 303]
+    # 2. Login
+    response_login = client.post("/login", data={
+        "email": test_user["email"],
+        "password": test_user["password"]
+    }, follow_redirects=False)
+    
+    assert response_login.status_code == 303
+    assert response_login.headers["location"] == "/dashboard"
+    assert "access_token" in response_login.cookies
+    print("âś… Integration test: Login successful.")
 
 
 
@@ -1768,62 +2078,82 @@ def test_full_user_flow():
 FILE: tests/test_login_view.py
 ================================================
 import pytest
-from unittest.mock import patch, MagicMock
 from fastapi.testclient import TestClient
 from app.main import app
+import uuid
 
 client = TestClient(app)
 
-def test_post_login_success():
-    """Test udanego logowania"""
-    
-    with patch("app.dependencies.get_supabase_client") as mock_client:
-        # Setup mocka
-        mock_supabase = MagicMock()
-        mock_session = MagicMock()
-        mock_session.access_token = "fake_token"
-        mock_session.user = MagicMock()
-        
-        mock_auth_response = MagicMock()
-        mock_auth_response.session = mock_session
-        mock_auth_response.user = mock_session.user
-        
-        mock_supabase.auth.sign_in_with_password.return_value = mock_auth_response
-        mock_client.return_value = mock_supabase
-        
-        response = client.post(
-            "/login", 
-            data={"email": "test@example.com", "password": "testpassword"},
-            follow_redirects=False
-        )
-        
-        # Akceptuj rĂłĹĽne statusy
-        assert response.status_code in [200, 303], f"Status: {response.status_code}"
-        
-        print(f"âś… Test login przeszedĹ‚ - status: {response.status_code}")
+def test_post_login_success(client, test_user):
+    """Test successful login"""
+    response_login = client.post(
+        "/login",
+        data={"email": test_user["email"], "password": test_user["password"]},
+        follow_redirects=False
+    )
 
-def test_post_login_invalid_credentials():
-    """Test bĹ‚Ä™dnego logowania"""
-    
-    with patch("app.dependencies.get_supabase_client") as mock_client:
-        mock_supabase = MagicMock()
-        mock_supabase.auth.sign_in_with_password.side_effect = Exception("Invalid")
-        mock_client.return_value = mock_supabase
-        
-        response = client.post(
-            "/login",
-            data={"email": "wrong@example.com", "password": "wrong"}
-        )
-        
-        assert response.status_code == 200
-        print(f"âś… Test invalid login przeszedĹ‚")
+    assert response_login.status_code == 303
+    assert response_login.headers["location"] == "/dashboard"
+    assert "access_token" in response_login.cookies
+    assert response_login.cookies["access_token"].strip('"').startswith("Bearer ")
+
+    print(f"âś… Test login passed - status: {response_login.status_code}")
+
+def test_post_login_invalid_credentials(client):
+    """Test invalid login"""
+    unique_email = f"nonexistent_{uuid.uuid4()}@test.com"
+    password = "anypassword"
+
+    response = client.post(
+        "/login",
+        data={"email": unique_email, "password": password}
+    )
+
+    assert response.status_code == 200
+    assert "WystÄ…piĹ‚ bĹ‚Ä…d podczas logowania." in response.text
+    print(f"âś… Test invalid login passed")
 
 
 
 ================================================
 FILE: tests/test_users.py
 ================================================
-Error reading file with 'cp1250': 'charmap' codec can't decode byte 0x83 in position 2336: character maps to <undefined>
+import pytest
+from fastapi.testclient import TestClient
+from app.main import app
+import uuid
+
+client = TestClient(app)
+
+def test_register_user_existing_email(client, test_user):
+    """Test registration with an email that already exists."""
+    # The test_user fixture has already created a user.
+    # Try to register the same user again.
+    response = client.post(
+        "/register",
+        data={"email": test_user["email"], "password": test_user["password"]}
+    )
+
+    assert response.status_code == 200 # Stays on the same page with an error
+    assert "UĹĽytkownik o tym adresie email juĹĽ istnieje." in response.content.decode("utf-8")
+
+def test_register_user_missing_fields(client):
+    """Test registration with missing email or password."""
+    response = client.post(
+        "/register",
+        data={"email": "missing@example.com", "password": ""} # Missing password
+    )
+    assert response.status_code == 200
+    assert "Email i hasĹ‚o sÄ… wymagane." in response.content.decode("utf-8")
+
+    response = client.post(
+        "/register",
+        data={"email": "", "password": "password123"} # Missing email
+    )
+    assert response.status_code == 200
+    assert "Email i hasĹ‚o sÄ… wymagane." in response.content.decode("utf-8")
+    print("âś… Test registration with missing fields passed.")
+
 
 
 ================================================

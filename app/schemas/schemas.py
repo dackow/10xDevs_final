@@ -95,3 +95,11 @@ class AIGenerationRequest(BaseModel):
 class AIGenerationResponse(BaseModel):
     """Schemat dla odpowiedzi z wygenerowanymi fiszkami (DTO)."""
     flashcards: List[FlashcardCreate]
+
+class FlashcardGenerateRequest(BaseModel):
+    text: str
+    count: int
+
+class FlashcardSaveRequest(BaseModel):
+    name: str
+    flashcards: List[FlashcardCreate]

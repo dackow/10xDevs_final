@@ -6,14 +6,230 @@ from fastapi.templating import Jinja2Templates
 from supabase import Client
 from typing import List, Optional, Any
 
+import json
+from uuid import UUID
+from fastapi import APIRouter, Depends, HTTPException, status, Query, Request, Form
+from fastapi.responses import HTMLResponse, RedirectResponse
+from fastapi.templating import Jinja2Templates
+from supabase import Client
+from typing import List, Optional, Any
+
 from app.crud.crud import (
-    update_flashcard, 
-    create_flashcard_set, 
-    delete_flashcard_set, 
-    get_flashcard_set, 
-    get_flashcard_sets, 
+    get_flashcard_set,
     get_flashcard_for_editing
 )
+from app.services import flashcard_service
+from app.schemas.schemas import (
+    Flashcard,
+    FlashcardUpdate,
+    FlashcardSetCreate,
+    FlashcardSetDetail,
+    FlashcardSet,
+    FlashcardCreate,
+    FlashcardGenerateRequest,
+    FlashcardSaveRequest
+)
+from app.dependencies import get_supabase_client, get_current_user
+from app.exceptions import GenerationFailedError, SaveFailedError
+
+router = APIRouter()
+templates = Jinja2Templates(directory="app/templates")
+
+@router.get("/sets/{set_id}", response_class=HTMLResponse)
+async def set_detail_view(
+    set_id: UUID,
+    request: Request,
+    supabase: Client = Depends(get_supabase_client),
+    current_user: Any = Depends(get_current_user)
+):
+    """Wyświetla szczegóły zestawu fiszek z możliwością nauki"""
+    try:
+        db_set = get_flashcard_set(
+            supabase=supabase, 
+            set_id=str(set_id),
+            user_id=current_user.id
+        )
+        
+        if db_set is None:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND, 
+                detail="Zestaw fiszek nie został znaleziony"
+            )
+        
+        flashcards_json = json.dumps([
+            {
+                "id": fc['id'], 
+                "question": fc['question'], 
+                "answer": fc['answer']
+            } for fc in db_set.get('flashcards', [])
+        ], ensure_ascii=False)
+        
+        return templates.TemplateResponse(
+            "set_detail.html", 
+            {
+                "request": request, 
+                "user": current_user, 
+                "set": db_set, 
+                "flashcards_json": flashcards_json
+            }
+        )
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Błąd podczas ładowania zestawu: {str(e)}"
+        )
+
+@router.get("/cards/{card_id}/edit", response_class=HTMLResponse)
+async def edit_flashcard_view(
+    card_id: UUID,
+    request: Request,
+    supabase: Client = Depends(get_supabase_client),
+    current_user: Any = Depends(get_current_user)
+):
+    """Formularz edycji fiszki"""
+    try:
+        flashcard = get_flashcard_for_editing(supabase, str(card_id), current_user.id)
+        
+        if flashcard is None:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND, 
+                detail="Fiszka nie została znaleziona lub nie masz uprawnień do jej edycji"
+            )
+            
+        return templates.TemplateResponse(
+            "edit_flashcard.html", 
+            {
+                "request": request, 
+                "user": current_user, 
+                "flashcard": flashcard
+            }
+        )
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Błąd podczas ładowania fiszki: {str(e)}"
+        )
+
+@router.post("/cards/{card_id}/edit", response_class=HTMLResponse)
+async def edit_flashcard_post(
+    card_id: UUID,
+    request: Request,
+    question: str = Form(...),
+    answer: str = Form(...),
+    supabase: Client = Depends(get_supabase_client),
+    current_user: Any = Depends(get_current_user)
+):
+    """Zapisuje zmiany w fiszce"""
+    try:
+        flashcard = get_flashcard_for_editing(supabase, str(card_id), current_user.id)
+        if not flashcard:
+            return RedirectResponse(
+                url="/dashboard", 
+                status_code=status.HTTP_303_SEE_OTHER
+            )
+
+        question = question.strip()
+        answer = answer.strip()
+        
+        if not question or not answer:
+            return templates.TemplateResponse(
+                "edit_flashcard.html",
+                {
+                    "request": request,
+                    "user": current_user,
+                    "flashcard": flashcard,
+                    "error_message": "Pytanie i odpowiedź nie mogą być puste."
+                },
+                status_code=status.HTTP_422_UNPROCESSABLE_ENTITY
+            )
+
+        flashcard_data = FlashcardUpdate(question=question, answer=answer)
+        updated_flashcard = flashcard_service.update_flashcard(
+            supabase, 
+            str(card_id), 
+            current_user.id, 
+            flashcard_data.model_dump(exclude_unset=True)
+        )
+        
+        return RedirectResponse(
+            url=f"/sets/{flashcard['set_id']}", 
+            status_code=status.HTTP_303_SEE_OTHER
+        )
+
+    except HTTPException as e:
+        flashcard = get_flashcard_for_editing(supabase, str(card_id), current_user.id)
+        return templates.TemplateResponse(
+            "edit_flashcard.html",
+            {
+                "request": request,
+                "user": current_user,
+                "flashcard": flashcard or {},
+                "error_message": f"Błąd podczas zapisywania: {e.detail}"
+            },
+            status_code=e.status_code
+        )
+
+@router.get("/generate", response_class=HTMLResponse)
+async def handle_generate_view_get(
+    request: Request,
+    current_user: Any = Depends(get_current_user)
+):
+    return templates.TemplateResponse(
+        "generate.html", 
+        {"request": request, "user": current_user}
+    )
+
+@router.post("/generate/preview", response_model=List[FlashcardCreate])
+async def generate_preview(
+    request: FlashcardGenerateRequest,
+    current_user: Any = Depends(get_current_user)
+):
+    """
+    Generates a preview of flashcards from the given text.
+    """
+    try:
+        return await flashcard_service.generate_flashcards(request.text, request.count)
+    except GenerationFailedError as e:
+        raise e
+
+@router.post("/sets", response_model=FlashcardSet)
+async def save_set(
+    request: FlashcardSaveRequest,
+    supabase: Client = Depends(get_supabase_client),
+    current_user: Any = Depends(get_current_user)
+):
+    """
+    Saves a new flashcard set.
+    """
+    try:
+        set_data = FlashcardSetCreate(name=request.name, flashcards=request.flashcards)
+        return flashcard_service.save_flashcard_set(supabase, set_data, current_user.id)
+    except SaveFailedError as e:
+        raise e
+
+@router.post("/sets/{set_id}/delete")
+async def delete_flashcard_set_endpoint(
+    set_id: UUID,
+    supabase: Client = Depends(get_supabase_client),
+    current_user: Any = Depends(get_current_user)
+):
+    try:
+        flashcard_service.delete_flashcard_set(supabase=supabase, set_id=str(set_id), user_id=current_user.id)
+        return RedirectResponse(
+            url="/dashboard", 
+            status_code=status.HTTP_303_SEE_OTHER
+        )
+    except HTTPException as e:
+        return RedirectResponse(
+            url=f"/dashboard?error_message={e.detail}", 
+            status_code=status.HTTP_303_SEE_OTHER
+        )
 from app.services.ollama import generate_flashcards_from_text
 from app.schemas.schemas import (
     Flashcard, 
