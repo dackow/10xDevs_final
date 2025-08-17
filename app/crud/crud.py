@@ -214,9 +214,9 @@ def delete_flashcard_set(supabase: Client, set_id: Union[str, int], user_id: str
 
     try:
         delete_response = supabase.table('flashcard_sets')\
-            .delete()
-            .eq('id', set_id)
-            .eq('user_id', user_id)
+            .delete()\
+            .eq('id', set_id)\
+            .eq('user_id', user_id)\
             .execute()
         
         if not delete_response.data:
