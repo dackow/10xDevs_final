@@ -32,3 +32,14 @@ pycache/
 server*.log
 .env
 .env_
+app/__pycache__/dependencies.cpython-313.pyc
+app/__pycache__/main.cpython-313.pyc
+app/crud/__pycache__/crud.cpython-313.pyc
+app/routers/__pycache__/auth.cpython-313.pyc
+app/routers/__pycache__/flashcards.cpython-313.pyc
+app/schemas/__pycache__/schemas.cpython-313.pyc
+app/services/ollama copy.py
+app/services/__pycache__/auth_service.cpython-313.pyc
+gil-log-analysis/top_contributors.txt
+gil-log-analysis/top_modified_files.txt
+gil-log-analysis/top_modified_modules.txt

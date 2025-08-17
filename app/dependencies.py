@@ -14,11 +14,19 @@ def get_current_user(request: Request, supabase: Client = Depends(get_supabase_c
         detail="Could not validate credentials",
         headers={"WWW-Authenticate": "Bearer"},
     )
-    
+
     token = request.cookies.get("access_token")
     if not token:
-        raise credentials_exception
-    
+        # If token not in cookie, check Authorization header
+        auth_header = request.headers.get("Authorization")
+        if auth_header:
+            if auth_header.startswith("Bearer "):
+                token = auth_header[len("Bearer "):]
+            else:
+                raise credentials_exception # Invalid Authorization header format
+        else:
+            raise credentials_exception # No token in cookie or Authorization header
+
     if token.startswith("Bearer "):
         token = token[len("Bearer "):]
 
@@ -26,8 +34,8 @@ def get_current_user(request: Request, supabase: Client = Depends(get_supabase_c
         user_response = supabase.auth.get_user(token)
         if user_response.user is None:
             raise credentials_exception
-        
+
         return user_response.user
-        
+
     except Exception as e:
         raise credentials_exception
