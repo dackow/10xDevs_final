@@ -23,11 +23,40 @@ jobs:
       - name: Install Python dependencies
         run: pip install -r requirements.txt
 
-      # Instalacja Playwright browsers + system deps BEZ przestarzałej akcji
       - name: Install Playwright (chromium + system deps)
         run: npx playwright install --with-deps chromium
-        # Jeśli testujesz więcej przeglądarek:
-        # run: npx playwright install --with-deps chromium firefox webkit
+
+      # Uruchom FastAPI w tle
+      - name: Start FastAPI server
+        env:
+          E2E_USERNAME:           ${{ secrets.E2E_USERNAME }}
+          E2E_PASSWORD:           ${{ secrets.E2E_PASSWORD }}
+          E2E_USERNAME_ID:        ${{ secrets.E2E_USERNAME_ID }}
+          OLLAMA_MOCK:            ${{ secrets.OLLAMA_MOCK }}
+          SUPABASE_URL:           ${{ secrets.SUPABASE_URL }}
+          SUPABASE_KEY:           ${{ secrets.SUPABASE_KEY }}
+          SUPABASE_SERVICE_KEY:   ${{ secrets.SUPABASE_SERVICE_KEY }}
+        run: |
+          # uruchom aplikację w tle na porcie 8000
+          nohup uvicorn app.main:app --host 127.0.0.1 --port 8000 > server.log 2>&1 &
+          echo $! > uvicorn.pid
+
+      # Poczekaj aż port 8000 zacznie odpowiadać (max ~30s)
+      - name: Wait for server to be ready
+        run: |
+          for i in {1..30}; do
+            if curl -sSf http://127.0.0.1:8000/login >/dev/null; then
+              echo "Server is up"; exit 0
+            fi
+            sleep 1
+          done
+          echo "Server did not start in time"; echo "--- server.log ---"; cat server.log; exit 1
+
+      - name: Smoke check endpoints (optional)
+        run: |
+          curl -sS http://127.0.0.1:8000/ -I || true
+          curl -sS http://127.0.0.1:8000/login -I || true
+          curl -sS http://127.0.0.1:8000/register -I || true
 
       - name: Run tests
         env:
@@ -52,3 +81,15 @@ jobs:
           PY
 
           pytest -q
+
+      # Posprzątaj serwer (nawet gdy testy padną)
+      - name: Stop FastAPI server
+        if: always()
+        run: |
+          if [ -f uvicorn.pid ]; then
+            kill $(cat uvicorn.pid) || true
+            sleep 1
+            pkill -f "uvicorn app.main:app" || true
+          fi
+          echo "--- server.log (tail) ---"
+          tail -n 200 server.log || true
