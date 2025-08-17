@@ -1,5 +1,4 @@
 name: Build and Test
-
 on:
   push:
     branches:
@@ -8,6 +7,9 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
+    env:
+      # wartości nietajne możesz trzymać w vars: ${{ vars.APP_ENV }}
+      PYTHONUNBUFFERED: "1"
 
     steps:
       - uses: actions/checkout@v4
@@ -15,10 +17,31 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
-          python-version: '3.13' # Use a specific Python version, e.g., '3.9', '3.10', '3.11'
+          python-version: '3.13'
 
       - name: Install dependencies
         run: pip install -r requirements.txt
 
       - name: Run tests
-        run: pytest
+        env:
+          E2E_USERNAME:           ${{ secrets.E2E_USERNAME }}
+          E2E_PASSWORD:           ${{ secrets.E2E_PASSWORD }}
+          E2E_USERNAME_ID:        ${{ secrets.E2E_USERNAME_ID }}
+          OLLAMA_MOCK:            ${{ secrets.OLLAMA_MOCK }}
+          SUPABASE_URL:           ${{ secrets.SUPABASE_URL }}
+          SUPABASE_KEY:           ${{ secrets.SUPABASE_KEY }}           # anon/public
+          SUPABASE_SERVICE_KEY:   ${{ secrets.SUPABASE_SERVICE_KEY }}   # service_role – UWAŻAĆ!
+        run: |
+          python - <<'PY'
+          import os
+          required = [
+            "E2E_USERNAME","E2E_PASSWORD","E2E_USERNAME_ID",
+            "SUPABASE_URL","SUPABASE_KEY","SUPABASE_SERVICE_KEY"
+          ]
+          missing = [k for k in required if not os.getenv(k)]
+          if missing:
+              raise SystemExit(f"Missing env vars: {missing}")
+          print("Secrets present: " + ", ".join(required))
+          PY
+
+          pytest -q
