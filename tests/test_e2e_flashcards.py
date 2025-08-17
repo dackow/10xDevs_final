@@ -40,14 +40,12 @@ def test_generate_flashcards(page: Page):
     page.goto("/generate")
 
     # Fill the form
-    page.get_by_label("Tekst źródłowy").fill("This is a test text for generating flashcards.")
+    page.get_by_label("Tekst źródłowy").fill("The quick brown fox jumps over the lazy dog. This sentence is famous because it contains all of the letters of the English alphabet. It is often used for touch-typing practice, and for testing typewriters and computer keyboards. The earliest known appearance of the phrase is from The Boston Journal in 1885. The phrase has been used in many different contexts, from a Microsoft font viewer to a song by the band The Books.")
     page.get_by_label("Ilość fiszek").select_option("5")
     page.get_by_role("button", name="Generuj fiszki").click()
+    page.locator("button", has_text=re.compile(r"Zapisz\s*zestaw")).wait_for(state="visible")
 
-    # Assert that the save form is now visible
-    expect(page.get_by_role("button", name="Zapisz zestaw")).to_be_visible()
-
-    # Assert that there are 5 question and 5 answer fields
+    # Assert that there are 5 question and 5 answer fields (due to mock)
     question_textareas = page.locator("textarea[name='questions']")
     answer_textareas = page.locator("textarea[name='answers']")
     expect(question_textareas).to_have_count(5)
