@@ -29,6 +29,11 @@ Na podstawie analizy dokumentu wymagań produktu (PRD), w szczególności z naci
 *   **Serwer ASGI:** **Uvicorn**
     *   **Uzasadnienie:** Standardowy serwer do uruchamiania aplikacji opartych na FastAPI. Jest szybki i prosty w użyciu.
 
+## Hosting
+
+*   **Platforma:** **Railway**
+    *   **Uzasadnienie:** Wybrano Railway ze względu na jego prostotę wdrożenia, przyjazne dla dewelopera środowisko i elastyczny model cenowy. Hojny darmowy kredyt jest idealny na start i dla projektów MVP. Platforma dobrze skaluje się wraz ze wzrostem aplikacji, co czyni ją odpowiednim wyborem dla startupu, minimalizując potrzebę migracji w początkowych fazach rozwoju.
+
 ## Podsumowanie
 
 | Komponent                  | Technologia | Uzasadnienie                                       |
@@ -40,5 +45,6 @@ Na podstawie analizy dokumentu wymagań produktu (PRD), w szczególności z naci
 | **Silnik Szablonów HTML**  | Jinja2      | Proste generowanie HTML po stronie serwera.        |
 | **Framework CSS**          | Bootstrap   | Szybkie budowanie estetycznego interfejsu.         |
 | **Serwer Aplikacji**       | Uvicorn     | Standardowy serwer dla FastAPI.                    |
+| **Hosting**                | Railway     | Prostota wdrożenia, elastyczność i skalowalność dla MVP. |
 | **Testy Jednostkowe/Integracyjne** | Pytest, FastAPI TestClient | Do testowania logiki biznesowej i endpointów API. |
 | **Testy E2E (Przyszłość)** | Playwright / Selenium | Do automatyzacji testów interfejsu użytkownika w przeglądarce. |

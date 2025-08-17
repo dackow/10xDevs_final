@@ -29,8 +29,13 @@ The technology stack was chosen with a focus on simplicity, speed of MVP impleme
 | **HTML Template Engine** | Jinja2 | Simple server-side HTML generation. |
 | **CSS Framework** | Bootstrap | Rapid development of a clean and aesthetic user interface. |
 | **Application Server** | Uvicorn | The standard server for FastAPI. |
+| **Hosting** | Railway | Simplicity of deployment, flexibility, and scalability for an MVP. |
 | **Unit/Integration Testing** | Pytest, FastAPI TestClient | Comprehensive testing for backend logic and API endpoints. |
 | **E2E Testing (Future)** | Playwright / Selenium | For automated browser-based UI testing. |
+
+## Hosting
+
+The application is hosted on [Railway](https://railway.app/), chosen for its ease of deployment, developer-friendly environment, and flexible pricing model suitable for an MVP and future scaling.
 
 ## Getting Started Locally
 
