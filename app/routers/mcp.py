@@ -2,7 +2,8 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from typing import Any, Dict, List, Optional
 
 from app.schemas.schemas import FlashcardGenerateRequest, AIGenerationResponse, ToolDefinition, ToolExecuteRequest, ToolExecuteResponse
-from app.dependencies import get_current_user
+# from app.dependencies import get_current_user # Remove this import
+
 from app.services.ollama import generate_flashcards_from_text
 
 router = APIRouter()
@@ -11,7 +12,7 @@ router = APIRouter()
 async def generate_flashcards_ai_function(
     text: str,
     count: int,
-    current_user: Any, # This will be injected by FastAPI's dependency injection
+    # current_user: Any, # Remove this parameter
     # supabase: Any # Assuming supabase client might be needed, though not directly used in this specific function
 ) -> Dict:
     try:
@@ -43,7 +44,7 @@ async def get_tool_definitions():
 @router.post("/tools/execute", response_model=ToolExecuteResponse)
 async def execute_tool(
     request: ToolExecuteRequest,
-    current_user: Any = Depends(get_current_user)
+    # current_user: Any = Depends(get_current_user) # Remove this dependency
 ):
     tool_name = request.tool_name
     parameters = request.parameters
@@ -63,7 +64,7 @@ async def execute_tool(
             result = await tool_function(
                 text=validated_params.text,
                 count=validated_params.count,
-                current_user=current_user
+                # current_user=current_user # Remove this parameter from the call
             )
         else:
             # Handle other tools if they are added in the future

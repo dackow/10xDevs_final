@@ -85,11 +85,11 @@ def test_execute_unauthenticated():
     }
     # Removed app.dependency_overrides[get_current_user]
     response = client.post("/mcp/tools/execute", json=request_data)
-    assert response.status_code == 401 # Expect 401 for unauthenticated access
+    assert response.status_code == 200 # Expect 200 OK as authentication is removed
     response_data = response.json()
-    assert "error" in response_data
-    assert response_data["error"]["message"] == "Could not validate credentials"
-    assert response_data["error"]["code"] == "401"
+    assert "content" in response_data
+    assert "flashcards" in response_data["content"]
+    assert len(response_data["content"]["flashcards"]) == 1
 
 # Add mock_current_user_fixture to tests that require authentication
 def test_execute_ollama_service_error(mock_ollama_generate, mock_current_user_fixture):
