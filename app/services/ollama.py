@@ -10,6 +10,16 @@ OLLAMA_MODEL_NAME = os.getenv("OLLAMA_MODEL_NAME", "mistral")
 
 
 async def generate_flashcards_from_text(text: str, count: int) -> List[FlashcardCreate]:
+    if os.getenv("OLLAMA_MOCK") == "true":
+        # For testing purposes, return a list of mock flashcards
+        # This avoids calling the actual Ollama service when OLLAMA_MOCK is set
+        return [
+            FlashcardCreate(
+                question=f"Mock question {i + 1} for text: '{text[:20]}...'",
+                answer=f"Mock answer {i + 1}"
+            )
+            for i in range(count)
+        ]
     prompt = f"""
     Generate {count} flashcards (question and answer) from the following text. You must generate exactly {count} flashcards, no less, no more.
     Provide the output as a JSON array of objects, where each object has 'question' and 'answer' keys.
