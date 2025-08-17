@@ -20,13 +20,14 @@ jobs:
         with:
           python-version: '3.13'
 
-      - name: Install dependencies
+      - name: Install Python dependencies
         run: pip install -r requirements.txt
 
-      - name: Setup Playwright
-        uses: microsoft/playwright-github-action@v1
-        # with:
-        #   browsers: 'chromium'  # odkomentuj, jeśli chcesz tylko chromium
+      # Instalacja Playwright browsers + system deps BEZ przestarzałej akcji
+      - name: Install Playwright (chromium + system deps)
+        run: npx playwright install --with-deps chromium
+        # Jeśli testujesz więcej przeglądarek:
+        # run: npx playwright install --with-deps chromium firefox webkit
 
       - name: Run tests
         env:
