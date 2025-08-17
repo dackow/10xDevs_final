@@ -74,7 +74,7 @@ async def generate_flashcards_from_text(text: str, count: int) -> List[Flashcard
 
     try:
         async with httpx.AsyncClient() as client:
-            response = await client.post(f"{OLLAMA_API_URL}/api/generate", json=payload, timeout=30.0)
+            response = await client.post(f"{OLLAMA_API_URL}/api/generate", json=payload, timeout=60.0)
             response.raise_for_status() # Raise an exception for 4xx or 5xx responses
 
             response_data = response.json()

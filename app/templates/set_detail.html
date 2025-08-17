@@ -24,9 +24,13 @@
         </div>
     </div>
 
+    <script id="flashcards-data" type="application/json">
+        {{ flashcards_json | safe }}
+    </script>
+
     <script>
     document.addEventListener('DOMContentLoaded', function() {
-        const flashcards = JSON.parse('{{ flashcards_json | safe }}');
+        const flashcards = JSON.parse(document.getElementById('flashcards-data').textContent);
         if (!flashcards || flashcards.length === 0) return;
 
         let currentIndex = 0;

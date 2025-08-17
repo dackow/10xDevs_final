@@ -18,7 +18,7 @@ templates = Jinja2Templates(directory="app/templates")
 
 @router.get("/sets/{set_id}", response_class=HTMLResponse)
 async def set_detail_view(
-    set_id: UUID,
+    set_id: int,
     request: Request,
     supabase: Client = Depends(get_supabase_client),
     current_user: Any = Depends(get_current_user)
