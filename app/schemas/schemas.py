@@ -1,6 +1,6 @@
 from pydantic import BaseModel, ConfigDict
 from datetime import datetime
-from typing import List, Optional
+from typing import List, Optional, Dict
 from uuid import UUID # Import UUID
 
 # =============================================================================
@@ -103,3 +103,21 @@ class FlashcardGenerateRequest(BaseModel):
 class FlashcardSaveRequest(BaseModel):
     name: str
     flashcards: List[FlashcardCreate]
+
+# =============================================================================
+# 5. SCHEMATY DLA MODEL CONTEXT PROTOCOL (MCP)
+# =============================================================================
+
+class ToolDefinition(BaseModel):
+    name: str
+    description: str
+    input_schema: Dict
+    output_schema: Dict
+
+class ToolExecuteRequest(BaseModel):
+    tool_name: str
+    parameters: Dict
+
+class ToolExecuteResponse(BaseModel):
+    content: Optional[Dict] = None
+    error: Optional[Dict] = None
