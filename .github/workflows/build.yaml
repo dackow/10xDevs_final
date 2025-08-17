@@ -1,15 +1,11 @@
 name: Build and Test
 on:
   push:
-    branches:
-      - supabase-migration
+    branches: [ supabase-migration ]
 
 jobs:
   build:
     runs-on: ubuntu-latest
-    env:
-      # wartości nietajne możesz trzymać w vars: ${{ vars.APP_ENV }}
-      PYTHONUNBUFFERED: "1"
 
     steps:
       - uses: actions/checkout@v4
@@ -22,6 +18,13 @@ jobs:
       - name: Install dependencies
         run: pip install -r requirements.txt
 
+      # Zainstaluje przeglądarki Playwright + system deps
+      - name: Setup Playwright
+        uses: microsoft/playwright-github-action@v1
+        with:
+          # opcjonalnie: browsers: 'chromium,firefox,webkit'
+          # cache jest domyślnie włączony
+
       - name: Run tests
         env:
           E2E_USERNAME:           ${{ secrets.E2E_USERNAME }}
@@ -29,19 +32,6 @@ jobs:
           E2E_USERNAME_ID:        ${{ secrets.E2E_USERNAME_ID }}
           OLLAMA_MOCK:            ${{ secrets.OLLAMA_MOCK }}
           SUPABASE_URL:           ${{ secrets.SUPABASE_URL }}
-          SUPABASE_KEY:           ${{ secrets.SUPABASE_KEY }}           # anon/public
-          SUPABASE_SERVICE_KEY:   ${{ secrets.SUPABASE_SERVICE_KEY }}   # service_role – UWAŻAĆ!
-        run: |
-          python - <<'PY'
-          import os
-          required = [
-            "E2E_USERNAME","E2E_PASSWORD","E2E_USERNAME_ID",
-            "SUPABASE_URL","SUPABASE_KEY","SUPABASE_SERVICE_KEY"
-          ]
-          missing = [k for k in required if not os.getenv(k)]
-          if missing:
-              raise SystemExit(f"Missing env vars: {missing}")
-          print("Secrets present: " + ", ".join(required))
-          PY
-
-          pytest -q
+          SUPABASE_KEY:           ${{ secrets.SUPABASE_KEY }}
+          SUPABASE_SERVICE_KEY:   ${{ secrets.SUPABASE_SERVICE_KEY }}
+        run: pytest -q
