@@ -1,3 +1,9 @@
+"""
+This module provides Create, Read, Update, and Delete (CRUD) operations
+for interacting with the Supabase database tables related to flashcards and flashcard sets.
+It encapsulates direct database access logic.
+"""
+
 from supabase import Client
 from app.schemas.schemas import FlashcardSetCreate, FlashcardCreate
 from fastapi import HTTPException, status
@@ -5,6 +11,25 @@ from typing import Union, Dict, Any, List
 import uuid
 
 def create_flashcard_set(supabase: Client, set_data: FlashcardSetCreate, user_id: str) -> Dict[str, Any]:
+    """Creates a new flashcard set and its associated flashcards in the database.
+
+    Ensures that the user ID is provided and that the set name is unique for the user.
+    If flashcards are provided in `set_data`, they are also inserted and linked to the new set.
+
+    :param supabase: The Supabase client instance.
+    :type supabase: Client
+    :param set_data: The data for the flashcard set to be created, including its name and a list of flashcards.
+    :type set_data: FlashcardSetCreate
+    :param user_id: The ID of the user who is creating the flashcard set.
+    :type user_id: str
+    :raises HTTPException: If `user_id` is missing, if the set cannot be created, or if flashcards cannot be added.
+    :raises ValueError: If the set name is empty or a set with the same name already exists for the user.
+    :returns: A dictionary representing the newly created flashcard set, including its ID and inserted flashcards.
+    :rtype: Dict[str, Any]
+    :dependencies:
+        - `supabase`: For database operations.
+        - `app.schemas.schemas.FlashcardSetCreate`: For input data validation.
+    """
     if not user_id:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Brak user_id")
     
@@ -76,22 +101,81 @@ def create_flashcard_set(supabase: Client, set_data: FlashcardSetCreate, user_id
             raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Błąd: {str(e)}")
 
 def get_flashcard_set(supabase: Client, set_id: Union[str, int], user_id: str) -> Union[Dict[str, Any], None]:
+    """Retrieves a single flashcard set by its ID, ensuring it belongs to the specified user.
+
+    Includes all associated flashcards within the returned set data.
+
+    :param supabase: The Supabase client instance.
+    :type supabase: Client
+    :param set_id: The ID of the flashcard set to retrieve.
+    :type set_id: Union[str, int]
+    :param user_id: The ID of the user who owns the flashcard set.
+    :type user_id: str
+    :returns: A dictionary representing the flashcard set, or `None` if not found or not owned by the user.
+    :rtype: Union[Dict[str, Any], None]
+    :dependencies:
+        - `supabase`: For database operations.
+    """
     response = supabase.table('flashcard_sets').select('*, flashcards(*)').eq('id', set_id).eq('user_id', user_id).execute()
     if not response.data:
         return None
     return response.data[0]
 
 def get_flashcard_sets(supabase: Client, user_id: str):
+    """Retrieves all flashcard sets for a given user.
+
+    :param supabase: The Supabase client instance.
+    :type supabase: Client
+    :param user_id: The ID of the user whose flashcard sets are to be retrieved.
+    :type user_id: str
+    :returns: A list of dictionaries, each representing a flashcard set. Returns an empty list if no sets are found.
+    :rtype: List[Dict[str, Any]]
+    :dependencies:
+        - `supabase`: For database operations.
+    """
     response = supabase.table('flashcard_sets').select('*').eq('user_id', user_id).execute()
     return response.data or []
 
 def get_flashcard_for_editing(supabase: Client, card_id: Union[str, int], user_id: str):
+    """Retrieves a specific flashcard for editing, ensuring it belongs to the specified user.
+
+    This function checks ownership by joining with the `flashcard_sets` table.
+
+    :param supabase: The Supabase client instance.
+    :type supabase: Client
+    :param card_id: The ID of the flashcard to retrieve.
+    :type card_id: Union[str, int]
+    :param user_id: The ID of the user who owns the flashcard.
+    :type user_id: str
+    :returns: A dictionary representing the flashcard or `None` if not found or not owned by the user.
+    :rtype: Union[Dict[str, Any], None]
+    :dependencies:
+        - `supabase`: For database operations.
+    """
     response = supabase.table('flashcards').select('*, flashcard_sets!inner(user_id)').eq('id', card_id).execute()
     if not response.data or response.data[0]['flashcard_sets']['user_id'] != user_id:
         return None
     return response.data[0]
 
 def update_flashcard(supabase: Client, card_id: Union[str, int], user_id: str, flashcard_data: dict):
+    """Updates an existing flashcard in the database.
+
+    First, it verifies that the flashcard exists and is owned by the specified user.
+
+    :param supabase: The Supabase client instance.
+    :type supabase: Client
+    :param card_id: The ID of the flashcard to update.
+    :type card_id: Union[str, int]
+    :param user_id: The ID of the user who owns the flashcard. Used for authorization.
+    :type user_id: str
+    :param flashcard_data: A dictionary containing the fields to update (e.g., 'question', 'answer').
+    :type flashcard_data: dict
+    :raises HTTPException: If the flashcard is not found or if the update operation fails.
+    :returns: A dictionary representing the updated flashcard.
+    :rtype: Dict[str, Any]
+    :dependencies:
+        - `supabase`: For database operations.
+    """
     card_to_edit = get_flashcard_for_editing(supabase, card_id, user_id)
     if not card_to_edit:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Flashcard not found")
@@ -102,6 +186,23 @@ def update_flashcard(supabase: Client, card_id: Union[str, int], user_id: str, f
     return response.data[0]
 
 def delete_flashcard_set(supabase: Client, set_id: Union[str, int], user_id: str):
+    """Deletes a flashcard set and all its associated flashcards from the database.
+
+    This function first verifies that the flashcard set exists and is owned by the specified user
+    before proceeding with the deletion.
+
+    :param supabase: The Supabase client instance.
+    :type supabase: Client
+    :param set_id: The ID of the flashcard set to delete.
+    :type set_id: Union[str, int]
+    :param user_id: The ID of the user who owns the flashcard set. Used for authorization.
+    :type user_id: str
+    :raises HTTPException: If the flashcard set is not found or if the delete operation fails.
+    :returns: A dictionary with a success message.
+    :rtype: Dict[str, str]
+    :dependencies:
+        - `supabase`: For database operations.
+    """
     response = supabase.table('flashcard_sets')\
         .select('*')\
         .eq('id', set_id)\
@@ -113,9 +214,9 @@ def delete_flashcard_set(supabase: Client, set_id: Union[str, int], user_id: str
 
     try:
         delete_response = supabase.table('flashcard_sets')\
-            .delete()\
-            .eq('id', set_id)\
-            .eq('user_id', user_id)\
+            .delete()
+            .eq('id', set_id)
+            .eq('user_id', user_id)
             .execute()
         
         if not delete_response.data:

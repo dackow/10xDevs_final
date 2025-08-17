@@ -1,3 +1,10 @@
+"""
+This module provides functions for interacting with the Ollama AI service
+to generate flashcards from text.
+
+It handles API requests, response parsing, and error handling specific to the Ollama API.
+"""
+
 import httpx
 import json
 from typing import List
@@ -10,6 +17,31 @@ OLLAMA_MODEL_NAME = os.getenv("OLLAMA_MODEL_NAME", "mistral")
 
 
 async def generate_flashcards_from_text(text: str, count: int) -> List[FlashcardCreate]:
+    """Generates a specified number of flashcards from a given text using the Ollama AI service.
+
+    This function constructs a prompt for the Ollama model, sends a request to the
+    Ollama API, and parses the JSON response to create a list of FlashcardCreate objects.
+    It also supports a mock mode for testing purposes.
+
+    :param text: The input text from which flashcards are to be generated.
+    :type text: str
+    :param count: The exact number of flashcards to generate.
+    :type count: int
+    :raises HTTPException: If there are issues connecting to the Ollama service, the service returns
+                           an error status, the response is malformed JSON, or the generated
+                           flashcard format is invalid.
+    :returns: A list of `FlashcardCreate` objects, each containing a question and an answer.
+    :rtype: List[FlashcardCreate]
+    :dependencies:
+        - `httpx`: For making asynchronous HTTP requests to the Ollama API.
+        - `json`: For parsing the JSON response from Ollama.
+        - `app.schemas.schemas.FlashcardCreate`: For the return type.
+        - `os`: For reading environment variables (`OLLAMA_API_URL`, `OLLAMA_MODEL_NAME`, `OLLAMA_MOCK`).
+    :notes:
+        - If the `OLLAMA_MOCK` environment variable is set to "true", the function will return
+          mock flashcards instead of calling the actual Ollama service.
+        - The function expects the Ollama model to return a JSON array of objects with 'question' and 'answer' keys.
+    """
     if os.getenv("OLLAMA_MOCK") == "true":
         # For testing purposes, return a list of mock flashcards
         # This avoids calling the actual Ollama service when OLLAMA_MOCK is set

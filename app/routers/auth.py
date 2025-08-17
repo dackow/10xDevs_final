@@ -1,3 +1,8 @@
+"""
+This module defines the API routes and handlers for user authentication.
+It includes endpoints for user login, registration, and logout, interacting with Supabase for authentication.
+"""
+
 from fastapi import APIRouter, Depends, HTTPException, status, Request, Form
 from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
