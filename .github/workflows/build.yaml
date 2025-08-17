@@ -1,8 +1,8 @@
 name: Build and Test
 on:
   push:
-    branches: [ supabase-migration ]
-
+    branches: 
+      - supabase-migration
 jobs:
   build:
     runs-on: ubuntu-latest
